@@ -146,36 +146,43 @@ class Tie{
       this.baseObject.removeChild( this.baseObject.firstChild );
     }
     // add menu object
-    const menuList = [
+    const mainMenuList = [
+      {
+        name: 'mainMenuBar',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 12 24" width="12" fill="#000000"><path d="M2 2h8v20H2z"/></svg>',
+        title: this.getMsg('mainMenu','bar'),
+      },
       {
         name:'undo',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>',
         onclick: this.menu.undo,
-        title: this.getMsg('menu','undo'),
+        title: this.getMsg('mainMenu','undo'),
       },
       {
         name:'redo',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>',
         onclick: this.menu.redo,
-        title: this.getMsg('menu','redo'),
+        title: this.getMsg('mainMenu','redo'),
       },
     ];
-    const menuObj = this.createElement('div','menu');
-    let menu1st = true;
-    for (let m of menuList) {
-      if (!menu1st){
-        this.addHTMLToNode(menuObj,'&nbsp;');
+    const mainMenuObj = this.createElement('div','mainMenu');
+    let mainMenu1st = true;
+    for (let m of mainMenuList) {
+      if (!mainMenu1st){
+        this.addHTMLToNode(mainMenuObj,'&nbsp;');
       }
-      const obj = this.createElement('a','menu_item_' + m.name,m.icon);
-      obj.href = '#';
-      obj.onclick = m.onclick;
+      const obj = this.createElement('a','mainMenu_item_' + m.name,m.icon);
+      if (m.onclick){
+        obj.href = '#';
+        obj.onclick = m.onclick;
+      }
       obj.title = m.title;
-      menuObj.appendChild(obj);
-      menu1st = false;
+      mainMenuObj.appendChild(obj);
+      mainMenu1st = false;
     }
-    this.baseObject.appendChild(menuObj);
-    this.setupMoveableObject(menuObj);
-    this.setVisible(menuObj,this.getSavedVisible(menuObj,true))
+    this.baseObject.appendChild(mainMenuObj);
+    this.setupMoveableObject(mainMenuObj);
+    this.setVisible(mainMenuObj,this.getSavedVisible(mainMenuObj,true))
   }
   menu = {
     undo: ()=>{
@@ -186,7 +193,11 @@ class Tie{
     }
   }
   msg = {
-    menu: {
+    mainMenu: {
+      bar: {
+        ja: 'メインメニューです。移動可能です。',
+        en: 'menu bar',
+      },
       undo: {
         ja: '操作を一段階戻します',
         en: 'undo',
