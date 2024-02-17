@@ -218,7 +218,7 @@ class Tie{
       self.setPosition(obj,'top',event.pageY - clickY);
     }
     function mup(e) {
-      let event = e.type === 'mouseup' ? e : e.changedTouches[0];
+      let event = (e.type === 'mouseleave' || 'mouseup') ? e : e.changedTouches[0];
       event.preventDefault();
       obj.style.zIndex = zIndex;
       obj.removeEventListener("mouseup", mup, false);
