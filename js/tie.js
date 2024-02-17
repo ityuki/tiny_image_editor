@@ -186,6 +186,7 @@ class Tie{
     const objId = obj.id;
     obj.style.cursor = 'move';
     obj.style.position = 'absolute';
+    obj.style.whiteSpace = 'nowrap';
     obj.addEventListener('mousedown',mdown,false);
     obj.addEventListener('touchstart',mdown,false);
     obj.addEventListener('click',mclick,{capture: true});
@@ -463,11 +464,28 @@ class Tie{
     const rClickMenuObj = document.getElementById(this.getObjIdName('rightClickMenu'));
     if (rClickMenuObj !== null) {
       this.setZIndexObjectToTop(rClickMenuObj);
+      this.setVisible(rClickMenuObj,false);
     }
     this.saveZIndex();
   }
   menuList = {
     rightClickMenu: {
+      default: {
+        visible: false,
+        isMovable: true,
+        left: 0,
+        top: 0,
+      },
+      events: {
+      },
+      functions: {
+      },
+      contants: [
+        {
+          name: 'bar',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 12 24" width="12" fill="#000000"><path d="M2 2h8v20H2z"/></svg>',
+        },
+      ],
     },
     mainMenu: {
       default: {
@@ -508,6 +526,12 @@ class Tie{
   }
   msg = {
     menu:{
+      rightClickMenu:{
+        bar: {
+          ja: '右クリックメニューで操作します',
+          en: 'right click menu bar',
+        },
+      },
       mainMenu: {
         bar: {
           ja: 'メインメニューです。移動可能です。',
