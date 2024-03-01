@@ -138,4 +138,4 @@ for file in `find "${SRC}/${MAIN}/" -maxdepth 1 -type f -regex '.+\.js' -printf 
 done
 
 cat "${SRC}/${TEMPLATE}/${JSTOP}" "${TMP}/center.tjs" "${SRC}/${TEMPLATE}/${JSBOTTOM}" > "${OUT}/${OUTFILE}"
-
+cp -f "${OUT}/${OUTFILE}" "js/${OUTFILE}"
