@@ -9,7 +9,7 @@ const Tie = (function(){
   // rand class
   // MTRand Sample
   /*
-  console.log((new this.MTRand([0x123, 0x234, 0x345, 0x456])).randN(5));
+  console.log((new MTRand([0x123, 0x234, 0x345, 0x456])).randN(5));
   console.log("1067595299  955945823  477289528 4107218783 4228976476");
   */
   const MTRand = this.MTRand = class MTRand {
@@ -104,7 +104,7 @@ const Tie = (function(){
   }
   const rand_vals = this.rand_vals = function rand_vals(seed,count){
     if (count === undefined || count === null || count <= 0) count = 1;
-    new MTRand(seed).randN(count);
+    return (new MTRand(seed)).randN(count);
   }
 
   // storage class
