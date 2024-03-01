@@ -1,0 +1,2 @@
+return Main;
+}).call({},self);
