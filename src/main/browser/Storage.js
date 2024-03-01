@@ -10,11 +10,11 @@ const Storage = self.Storage = class Storage {
     return this.#realKeyPrefixName() + key;
   }
   save(key, value) {
-    localStorage.setItem(this.#realKeyName(key),JSON.stringify(value));
+    global.localStorage.setItem(this.#realKeyName(key),JSON.stringify(value));
   }
   load(key, defaultValue) {
     if (defaultValue === undefined) defaultValue = null;
-    const v = localStorage.getItem(this.#realKeyName(key));
+    const v = global.localStorage.getItem(this.#realKeyName(key));
     if (v === null) return defaultValue;
     try{
       return JSON.parse(v);
@@ -24,14 +24,14 @@ const Storage = self.Storage = class Storage {
     }
   }
   delete(key) {
-    localStorage.removeItem(this.#realKeyName(key));  
+    global.localStorage.removeItem(this.#realKeyName(key));  
   }
   keys(prefix) {
     const r = [];
     const gprefx = this.#realKeyPrefixName();
     if (prefix === undefined || prefix === null) prefix = '';
-    for (let i = 0; i < localStorage.length; i++) {
-      const name = localStorage.key(i);
+    for (let i = 0; i < global.localStorage.length; i++) {
+      const name = global.localStorage.key(i);
       if (name !== '') {
         if (name.startsWith(gprefx)) {
           const n = name.substring(gprefx.length);
@@ -50,6 +50,6 @@ const Storage = self.Storage = class Storage {
     }
   }
   clearAllStorageData(){
-    localStorage.clear();
+    global.localStorage.clear();
   }
 }

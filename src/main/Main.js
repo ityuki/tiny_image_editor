@@ -7,11 +7,10 @@ const Main = self.Main = class Main {
     }
     this.tieName = tieName;
     if (bodyObj === undefined || bodyObj === null){
-      bodyObj = document.getElementsByClassName("BODY")[0];
+      bodyObj = global.document.getElementsByTagName("body")[0];
     }
     this.bodyObj = bodyObj;
     this.storage = new self.browser.Storage(this);
   }
   static $tie = $tie;
 }
-console.log(this)

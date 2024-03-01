@@ -37,12 +37,12 @@ function build () {
   s2dir=`echo ${sdir} | sed -E "s/^.*\.([^.]+)/\1/"`
   mkdir -p "${TMP}/${_dir}"
   touch "${TMP}/${_dir}/center.tjs"
-  for dir in `find "${SRC}/${MAIN}/${_dir}" -maxdepth 1 -type d -not -regex '.*/\..*' -printf '%P\n'`; do
+  for dir in `find "${SRC}/${MAIN}/${_dir}" -maxdepth 1 -type d -not -regex '.*/\..*' -printf '%P\n' | sed -E -e '/^[^a-zA-Z0-9]/s/^/#_/' -e '/^[0-9]/s/^/1_/' -e '/^[a-z]/s/^/2_/' -e '/^[A-Z]/s/^/3_/' | sort | sed -e 's/^._//'`; do
     target=${_dir}/${dir}
     build $target $_lv
     cat "${TMP}/${target}/module.tjs" >> "${TMP}/${_dir}/center.tjs"
   done
-  for file in `find "${SRC}/${MAIN}/${_dir}" -maxdepth 1 -type f -regex '.+\.js' -printf '%P\n'`; do
+  for file in `find "${SRC}/${MAIN}/${_dir}" -maxdepth 1 -type f -regex '.+\.js' -printf '%P\n' | sed -E -e '/^[^a-zA-Z0-9]/s/^/#_/' -e '/^[0-9]/s/^/1_/' -e '/^[a-z]/s/^/2_/' -e '/^[A-Z]/s/^/3_/' | sort | sed -e 's/^._//'`; do
     echo "// ================================================" >> "${TMP}/${_dir}/center.tjs"
     echo "// module: $sdir , from: $file" >> "${TMP}/${_dir}/center.tjs"
     echo "// ================================================" >> "${TMP}/${_dir}/center.tjs"
@@ -60,12 +60,12 @@ function build () {
 
 touch "${TMP}/center.tjs"
 
-for dir in `find "${SRC}/${MAIN}/" -maxdepth 1 -type d -not -regex '.*/\..*' -printf '%P\n'`; do
+for dir in `find "${SRC}/${MAIN}/" -maxdepth 1 -type d -not -regex '.*/\..*' -printf '%P\n' | sed -E -e '/^[^a-zA-Z0-9]/s/^/#_/' -e '/^[0-9]/s/^/1_/' -e '/^[a-z]/s/^/2_/' -e '/^[A-Z]/s/^/3_/' | sort | sed -e 's/^._//'`; do
   build $dir 0
   cat "${TMP}/${dir}/module.tjs" >> "${TMP}/center.tjs"
 done
 
-for file in `find "${SRC}/${MAIN}/" -maxdepth 1 -type f -regex '.+\.js' -printf '%P\n'`; do
+for file in `find "${SRC}/${MAIN}/" -maxdepth 1 -type f -regex '.+\.js' -printf '%P\n' | sed -E -e '/^[^a-zA-Z0-9]/s/^/#_/' -e '/^[0-9]/s/^/1_/' -e '/^[a-z]/s/^/2_/' -e '/^[A-Z]/s/^/3_/' | sort | sed -e 's/^._//'`; do
   echo "// ================================================" >> "${TMP}/center.tjs"
   echo "// source: $file" >> "${TMP}/center.tjs"
   echo "// ================================================" >> "${TMP}/center.tjs"
