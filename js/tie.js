@@ -1,12 +1,13 @@
 const Tie = (function(){
-  const $tie = this;
+  const app = this.app = this;
+  const modules = app.modules = {};
+  const global = app.global = arguments[0];
+  const APP_ID = app.APP_ID = "tie";
+  const $tie = app.$tie = app;
+
   const self = this;
-  const app = this;
-  const APP_ID = "tie";
-  const global = self.global = arguments[0];
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = null;
-  const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie";
-  app.modules = {};
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID;
 // ================================================
 // source: functions.js
 // ================================================
@@ -14,10 +15,10 @@ const regExpEscape = self.regExpEscape = function regExpEscape(str) {
   return str.replace(/[-\/\\^$*+?.()|\[\]{}]/g, '\\$&');
 };
 
-const module_utils = self.module_utils = self.utils = app.modules.utils = (function(){
+const module_utils = self.module_utils = app.modules.utils = (function(){
   const self = this;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
-  const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie." + "utils";
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils";
 // ================================================
 // module: utils , from: MTRand.js
 // ================================================
@@ -127,10 +128,10 @@ const rand_vals = self.rand_vals = function rand_vals(seed,count){
 return self;
 }).call({},self);
 
-const module_browser = self.module_browser = self.browser = app.modules.browser = (function(){
+const module_browser = self.module_browser = app.modules.browser = (function(){
   const self = this;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
-  const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie." + "browser";
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser";
 // ================================================
 // module: browser , from: Storage.js
 // ================================================
@@ -208,7 +209,7 @@ const Main = self.Main = class Main {
       bodyObj = global.document.getElementsByTagName("body")[0];
     }
     this.bodyObj = bodyObj;
-    this.storage = new self.browser.Storage(this);
+    this.storage = new modules.browser.Storage(this);
   }
   static $tie = $tie;
 }

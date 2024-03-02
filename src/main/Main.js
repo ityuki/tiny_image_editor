@@ -10,7 +10,7 @@ const Main = self.Main = class Main {
       bodyObj = global.document.getElementsByTagName("body")[0];
     }
     this.bodyObj = bodyObj;
-    this.storage = new self.browser.Storage(this);
+    this.storage = new modules.browser.Storage(this);
   }
   static $tie = $tie;
 }
