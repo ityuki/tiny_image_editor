@@ -1,10 +1,12 @@
 const Tie = (function(){
   const $tie = this;
   const self = this;
+  const app = this;
   const APP_ID = "tie";
   const global = self.global = arguments[0];
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie";
+  app.modules = {};
 // ================================================
 // source: functions.js
 // ================================================
@@ -12,7 +14,7 @@ const regExpEscape = self.regExpEscape = function regExpEscape(str) {
   return str.replace(/[-\/\\^$*+?.()|\[\]{}]/g, '\\$&');
 };
 
-const module_utils = self.module_utils = self.utils = (function(){
+const module_utils = self.module_utils = self.utils = app.modules.utils = (function(){
   const self = this;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie." + "utils";
@@ -125,7 +127,7 @@ const rand_vals = self.rand_vals = function rand_vals(seed,count){
 return self;
 }).call({},self);
 
-const module_browser = self.module_browser = self.browser = (function(){
+const module_browser = self.module_browser = self.browser = app.modules.browser = (function(){
   const self = this;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = "tie." + "browser";
