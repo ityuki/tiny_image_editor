@@ -91,12 +91,17 @@ function build () {
     fi
   done
   if [ $_lv -eq 1 ]; then
-    cat "${SRC}/${TEMPLATE}/${MODBASETOP}" "${TMP}/${_dir}/center.tjs" "${SRC}/${TEMPLATE}/${MODBASEBOTTOM}" > "${TMP}/${_dir}/module.tjs"
+    cp -f "${SRC}/${TEMPLATE}/${MODBASETOP}" "${TMP}/${_dir}/top.tjs"
+    cp -f "${SRC}/${TEMPLATE}/${MODBASEBOTTOM}" "${TMP}/${_dir}/bottom.tjs"
   else
-    cat "${SRC}/${TEMPLATE}/${MODTOP}" "${TMP}/${_dir}/center.tjs" "${SRC}/${TEMPLATE}/${MODBOTTOM}" > "${TMP}/${_dir}/module.tjs"
+    cp -f "${SRC}/${TEMPLATE}/${MODTOP}" "${TMP}/${_dir}/top.tjs"
+    cp -f "${SRC}/${TEMPLATE}/${MODBOTTOM}" "${TMP}/${_dir}/bottom.tjs"
   fi
-  sed -i -e "s/@MODULE_NAME@/${sdir}/g" "${TMP}/${_dir}/module.tjs"
-  sed -i -e "s/@MODULE_SHORT_NAME@/${s2dir}/g" "${TMP}/${_dir}/module.tjs"
+  sed -i -e "s/@MODULE_NAME@/${sdir}/g" "${TMP}/${_dir}/top.tjs"
+  sed -i -e "s/@MODULE_SHORT_NAME@/${s2dir}/g" "${TMP}/${_dir}/top.tjs"
+  sed -i -e "s/@MODULE_NAME@/${sdir}/g" "${TMP}/${_dir}/bottom.tjs"
+  sed -i -e "s/@MODULE_SHORT_NAME@/${s2dir}/g" "${TMP}/${_dir}/bottom.tjs"
+  cat "${TMP}/${_dir}/top.tjs" "${TMP}/${_dir}/center.tjs" "${TMP}/${_dir}/bottom.tjs" > "${TMP}/${_dir}/module.tjs"
 }
 
 touch "${TMP}/center.tjs"
