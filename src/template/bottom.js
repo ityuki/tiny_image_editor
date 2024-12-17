@@ -1,2 +1,2 @@
 return Main;
-}).call({},self);
+}).call({},{});

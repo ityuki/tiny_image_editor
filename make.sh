@@ -22,6 +22,7 @@ mkdir -p "$OUT"
 
 FIRSTLOAD_FILES=("functions.js")
 SECONDLOAD_DIRS=("utils")
+LASTLOAD_DIRS=("vendor")
 
 function chk_loaded() {
   local files=$1
@@ -73,7 +74,10 @@ function build () {
 
   for dir in `find "${SRC}/${MAIN}/${_dir}" -maxdepth 1 -type d -not -regex '.*/\..*' -printf '%P\n' | sed -E -e '/^[^a-zA-Z0-9]/s/^/#_/' -e '/^[0-9]/s/^/1_/' -e '/^[a-z]/s/^/2_/' -e '/^[A-Z]/s/^/3_/' | sort | sed -e 's/^._//'`; do
     chk_loaded $SECONDLOAD_DIRS $dir
-    if [ $? -eq 0 ]; then
+    local secondload_dirs=$?
+    chk_loaded $LASTLOAD_DIRS $dir
+    local lastload_dirs=$?    
+    if [ $secondload_dirs -eq 0 -a $lastload_dirs -eq 0 ]; then
       target=${_dir}/${dir}
       build $target $_lv
       cat "${TMP}/${target}/module.tjs" >> "${TMP}/${_dir}/center.tjs"
@@ -90,6 +94,15 @@ function build () {
       echo "" >> "${TMP}/${_dir}/center.tjs"
     fi
   done
+
+  for dir in ${LASTLOAD_DIRS[@]}; do
+    if [ -d "${SRC}/${MAIN}/${_dir}/${dir}" ]; then
+      target=${_dir}/${dir}
+      build $target $_lv
+      cat "${TMP}/${target}/module.tjs" >> "${TMP}/${_dir}/center.tjs"
+    fi
+  done
+
   if [ $_lv -eq 1 ]; then
     cp -f "${SRC}/${TEMPLATE}/${MODBASETOP}" "${TMP}/${_dir}/top.tjs"
     cp -f "${SRC}/${TEMPLATE}/${MODBASEBOTTOM}" "${TMP}/${_dir}/bottom.tjs"

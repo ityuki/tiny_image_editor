@@ -1,7 +1,7 @@
 const Tie = (function(){
   const app = this.app = this;
   const modules = app.modules = {};
-  const global = app.global = arguments[0];
+  const g_window = app.g_window = window;
   const APP_ID = app.APP_ID = "tie";
   const $tie = app.$tie = app;
 

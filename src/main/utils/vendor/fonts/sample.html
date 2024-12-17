@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>FONTFAMILY LIST</title>
+ <script src="fontfamily_list.js" type="text/javascript" charset="UTF-8" ></script>
+</head>
+<body>
+<h1>FONTFAMILY LIST</h1>
+<div id="data"></div>
+<script>
+  var fontfamily_list = []
+  window.addEventListener('fontfamily_list-loaded',function(event){
+    fontfamily_list = event.detail
+    var w = document.getElementById("data")
+    var d = ""
+    for(var i=0;i<fontfamily_list.length;i++){
+        var fontfamily = fontfamily_list[i]
+        d += fontfamily.name
+        d += " : "
+        for (var key in fontfamily.lang){
+            d += key
+            d += "="
+            d += fontfamily.lang[key]
+            d += " &nbsp; "
+        }
+        d += "<br>";
+    }
+    w.innerHTML = d
+  });
+</script>
+</body>
+</html>

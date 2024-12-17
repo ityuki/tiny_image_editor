@@ -1,7 +1,8 @@
 // storage class
 const Storage = self.Storage = class Storage {
-  constructor(main) {
+  constructor(main,g_window) {
     this.main = main;
+    this.g_window = g_window;
   }
   #realKeyPrefixName(){
     return APP_ID + "_" + this.main.tieName + "_";
@@ -10,11 +11,11 @@ const Storage = self.Storage = class Storage {
     return this.#realKeyPrefixName() + key;
   }
   save(key, value) {
-    global.localStorage.setItem(this.#realKeyName(key),JSON.stringify(value));
+    this.g_window.localStorage.setItem(this.#realKeyName(key),JSON.stringify(value));
   }
   load(key, defaultValue) {
     if (defaultValue === undefined) defaultValue = null;
-    const v = global.localStorage.getItem(this.#realKeyName(key));
+    const v = this.g_window.localStorage.getItem(this.#realKeyName(key));
     if (v === null) return defaultValue;
     try{
       return JSON.parse(v);
@@ -24,14 +25,14 @@ const Storage = self.Storage = class Storage {
     }
   }
   delete(key) {
-    global.localStorage.removeItem(this.#realKeyName(key));  
+    this.g_window.localStorage.removeItem(this.#realKeyName(key));  
   }
   keys(prefix) {
     const r = [];
     const gprefx = this.#realKeyPrefixName();
     if (prefix === undefined || prefix === null) prefix = '';
-    for (let i = 0; i < global.localStorage.length; i++) {
-      const name = global.localStorage.key(i);
+    for (let i = 0; i < this.g_window.localStorage.length; i++) {
+      const name = this.g_window.localStorage.key(i);
       if (name !== '') {
         if (name.startsWith(gprefx)) {
           const n = name.substring(gprefx.length);
@@ -50,6 +51,6 @@ const Storage = self.Storage = class Storage {
     }
   }
   clearAllStorageData(){
-    global.localStorage.clear();
+    this.g_window.localStorage.clear();
   }
 }
