@@ -16,6 +16,29 @@ const Main = self.Main = class Main {
     this.history = {
       maxdepth: -1,
     };
+    this.basecanvas = this.window.document.createElement("canvas");
+    this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
+    this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
+    this.targetObj.appendChild(this.basecanvas);
+    this.clearpatternlayer = new modules.browser.Layer(this);
+    this.clearpatternlayer.setHistoryMax(0);
+    this.layer = new modules.browser.Layer(this);
+    this.layer2 = new modules.browser.Layer(this);
+    //this.clearpatternlayer.addParentLayer(this.basecanvas);
+    this.clearpatternlayer.addChildLayer(this.layer);
+    this.layer.addParentLayer(this.clearpatternlayer);
+    this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
+    this.clearpatternlayer.do_write(this.basecanvas);
+    this.window.addEventListener("DOMContentLoaded", () =>{
+      const ovserver = new ResizeObserver(() => {
+        this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
+        this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
+        this.clearpatternlayer.resize(null, this.basecanvas.width, this.basecanvas.height);
+        this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
+        this.clearpatternlayer.do_write(this.basecanvas);
+      });
+      ovserver.observe(this.targetObj);
+    });
   }
   static $tie = $tie;
 }
