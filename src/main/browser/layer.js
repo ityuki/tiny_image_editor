@@ -89,7 +89,7 @@ const Layer = self.Layer = class Layer {
         const img = new Image();
         img.onload = () => {
           const context = this.canvas.getContext('2d');
-          this.pushHistory({
+          const h = {
             type: Layer.DoMethodType.FileLoad,
             image: structuredClone(context.getImageData(0,0,this.canvas.width,this.canvas.height).data),
             size:{
@@ -97,15 +97,23 @@ const Layer = self.Layer = class Layer {
               h: this.canvas.height,
             },
             loadFile: file,
-            loadImage: structuredClone(img.data),
+            loadImage: null,
             loadSize:{
               w: img.width,
               h: img.height,
             },
-          });
+          };
           this.canvas.width = img.width;
           this.canvas.height = img.height;
+          const ga = context.globalAlpha;
+          const gcom = context.globalCompositeOperation;
+          context.globalAlpha = 1;
+          context.globalCompositeOperation = Layer.OverlapType.Copy;
           context.drawImage(img,0,0);
+          context.globalAlpha = ga;
+          context.globalCompositeOperation = gcom;
+          h.loadImage = structuredClone(context.getImageData(0,0,this.canvas.width,this.canvas.height).data);
+          this.pushHistory(h);
           this.canvasUpdated = true;
           this.do_write(parentLayer);
         };
@@ -361,36 +369,28 @@ const Layer = self.Layer = class Layer {
     }
     this.history.pop();
   }
-  do_history(parentLayer,h,toNext){
-    if (h.type == layer.DoMethodType.Execute){
+  do_history(parentLayer,h){
+    if (h.type == Layer.DoMethodType.Execute){
       this.canvas.width = h.size.w;
       this.canvas.height = h.size.h;
       const context = this.canvas.getContext('2d');
       context.putImageData(new ImageData(h.image,h.w,h.h),0,0);
       this.canvasUpdated = true;
-    }else if (h.type == layer.DoMethodType.ChanegeWriteMode){
+    }else if (h.type == Layer.DoMethodType.ChanegeWriteMode){
       this.writeMode = h.writeMode;
       this.writeOption = structuredClone(h.whileOption);
-    }else if (h.type == layer.DoMethodType.Resize){
+    }else if (h.type == Layer.DoMethodType.Resize){
       this.canvas.width = h.size.w;
       this.canvas.height = h.size.h;
       const context = this.canvas.getContext('2d');
       context.putImageData(new ImageData(h.image,h.w,h.h),0,0);
       this.canvasUpdated = true;
-    }else if (h.type == layer.DoMethodType.FileLoad){
-      if (toNext == true){
-        this.canvas.width = h.loadSize.w;
-        this.canvas.height = h.loadSize.h;
-        const context = this.canvas.getContext('2d');
-        context.putImageData(new ImageData(h.loadImage,h.loadSize.w,h.loadSize.h),0,0);
-        this.canvasUpdated = true;
-      }else{
-        this.canvas.width = h.size.w;
-        this.canvas.height = h.size.h;
-        const context = this.canvas.getContext('2d');
-        context.putImageData(new ImageData(h.image,h.size.w,h.size.h),0,0);
-        this.canvasUpdated = true;
-      }
+    }else if (h.type == Layer.DoMethodType.FileLoad){
+      this.canvas.width = h.size.w;
+      this.canvas.height = h.size.h;
+      const context = this.canvas.getContext('2d');
+      context.putImageData(new ImageData(h.image,h.size.w,h.size.h),0,0);
+      this.canvasUpdated = true;
     }else{
     }
     this.do_write(parentLayer);
@@ -400,19 +400,33 @@ const Layer = self.Layer = class Layer {
       return;
     }
     if (this.historyPos == -1){
-      this.do_method(null,null);
+      this.historyPos = this.history.length - 1;
+      this.do_history(parentLayer,this.history[this.historyPos]);
+    }else{
+      if (this.historyPos <= 0){
+        return;
+      }
+      this.do_history(parentLayer,this.history[this.historyPos]);
+      this.historyPos -= 1;
     }
-    this.historyPos -= 1;
-    this.do_history(parentLayer,this.history[this.historyPos],false);
   }
   historyForward(parentLayer){
     if (this.history.length < 1){
       return;
     }
-    if (this.historyPos >= this.history.length - 1){
+    if (this.historyPos > this.history.length - 1){
+      this.historyPos = this.history.length - 1;
+    }
+    if (this.historyPos == -1){
       return;
     }
     this.historyPos += 1;
-    this.do_history(parentLayer,this.history[this.historyPos],true);
+    if (this.historyPos > this.history.length - 1){
+      this.historyPos = -1;
+    }
+    if (this.historyPos == -1){
+      return;
+    }
+    this.do_history(parentLayer,this.history[this.historyPos]);
   }
 }
