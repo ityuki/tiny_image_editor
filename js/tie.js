@@ -456,15 +456,6 @@ const module_browser = self.module_browser = (function(){
 // module: browser , from: layer.js
 // ================================================
 const Layer = self.Layer = class Layer {
-  static WriteMode = {
-    Copy: 0,
-  };
-  static DoMethodType = {
-    Execute: 0,
-    ChanegeWriteMode: 1,
-    Resize: 2,
-    FileLoad: 3,
-  };
   static OverlapType = {
     SourceOver:"source-over",
     SourceIn:"source-in",
@@ -493,44 +484,136 @@ const Layer = self.Layer = class Layer {
     Color:"color",
     Luminosity:"luminosity",
   };
-  constructor(main){
+
+  static LinkedLayerType = {
+    Window: 'window',
+    Size: 'size',
+    Pos: 'pos',
+    Move: 'move',
+    CanvasSize: 'canvasSize',
+  };
+
+  static DoMethodType = {
+    Execute: 0,
+    FileLoad: 1,
+    CanvasPosChange: 2,
+    CanvasSizeChange: 3,
+    CanvasAlphaChange: 4,
+    CanvasOverlapChange: 5,
+    OutputPosChange: 6,
+    OutputSizeChange: 7,
+    OutputAlphaChange: 8,
+    OutputOverlapChange: 9,
+  };
+  constructor(main, copyFromLayer){
     this.main = main;
-    this.writeMode = Layer.WriteMode.Copy;
-    this.writeOption = {
-      x: 0,
-      y: 0,
+    let x = 0;
+    let y = 0;
+    let w = this.main.defaultLayer.width;
+    let h = this.main.defaultLayer.height;
+    if (copyFromLayer != null){
+      x = copyFromLayer.canvas.x;
+      y = copyFromLayer.canvas.y;
+      w = copyFromLayer.canvas.w;
+      h = copyFromLayer.canvas.h;
+    }
+    this.canvasOpt = {
+      x: x,
+      y: y,
+      w: w,
+      h: h,
       alpha: 1,
       overlap: Layer.OverlapType.SourceOver,
     };
+    let ox = 0;
+    let oy = 0;
+    let ow = this.main.defaultLayer.width;
+    let oh = this.main.defaultLayer.height;
+    if (copyFromLayer != null){
+      ox = copyFromLayer.outputRect.x;
+      oy = copyFromLayer.outputRect.y;
+      ow = copyFromLayer.outputRect.w;
+      oh = copyFromLayer.outputRect.h;
+    }
+    this.outputOpt = {
+      x: ox,
+      y: oy,
+      w: ow,
+      h: oh,
+      alpha: 1,
+      overlap: Layer.OverlapType.SourceOver,
+    };
+    this.canvasCacheRect = {
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+    }
     this.parentLayers = [];
     this.childLayers = [];
+    this.linkedLayers = {
+      window: [],
+      size: [],
+      pos: [],
+      move: [],
+      canvasSize: [],
+    }
     this.history = [];
     this.historyPos = -1;
     this.historyMax = -1;
+    this.updated = false;
     this.canvasUpdated = false;
     this.canvasCacheUpdated = false;
-    this.canvas = this.main.window.document.createElement('canvas');
-    this.canvas.width = this.main.basecanvas.width;
-    this.canvas.height = this.main.basecanvas.height;
-    this.canvasBackup = this.main.window.document.createElement('canvas');
-    this.canvasCache = this.main.window.document.createElement('canvas');
-    const context = this.canvas.getContext('2d');
-    this.fill(this.canvas,[255,255,255,1]);
-    this.do_write(null);
+    this.canvasObj = this.main.window.document.createElement('canvas');
+    this.canvasObj.width = this.canvasOpt.w;
+    this.canvasObj.height = this.canvasOpt.h;
+    this.canvasBackupObj = this.main.window.document.createElement('canvas');
+    this.canvasCacheObj = this.main.window.document.createElement('canvas');
+    this.fill(this.canvasObj,[255,255,255,0]);
   }
   addParentLayer(layer){
     this.parentLayers.push(layer);
+    this.updated = true;
   }
   removeParentLayer(layer){
     this.parentLayers = this.parentLayers.filter((v) => v !== layer);
+    this.updated = true;
   }
   addChildLayer(layer){
     this.childLayers.push(layer);
+    this.updated = true;
   }
   removeChildLayer(layer){
     this.childLayers = this.childLayers.filter((v) => v !== layer);
+    this.updated = true;
   }
-  loadLocalImage(parentLayer){
+  addLinkedLayer(layer, type){
+    if (type === Layer.LinkedLayerType.Window){
+      this.linkedLayers.window.push(layer);
+    }else if (type === Layer.LinkedLayerType.Size){
+      this.linkedLayers.size.push(layer);
+    }else if (type === Layer.LinkedLayerType.Pos){
+      this.linkedLayers.pos.push(layer);
+    }else if (type === Layer.LinkedLayerType.Move){
+      this.linkedLayers.move.push(layer);
+    }else if (type === Layer.LinkedLayerType.CanvasSize){
+      this.linkedLayers.canvasSize.push(layer);
+    }
+  }
+  removeLinkedLayer(layer, type){
+    if (type === Layer.LinkedLayerType.Window){
+      this.linkedLayers.window = this.linkedLayers.window.filter((v) => v !== layer);
+    }else if (type === Layer.LinkedLayerType.Size){
+      this.linkedLayers.size = this.linkedLayers.size.filter((v) => v !== layer);
+    }else if (type === Layer.LinkedLayerType.Pos){
+      this.linkedLayers.pos = this.linkedLayers.pos.filter((v) => v !== layer);
+    }else if (type === Layer.LinkedLayerType.Move){
+      this.linkedLayers.move = this.linkedLayers.move.filter((v) => v !== layer);
+    }else if (type === Layer.LinkedLayerType.CanvasSize){
+      this.linkedLayers.canvasSize = this.linkedLayers.canvasSize.filter((v) => v !== layer);
+    }
+  }
+  loadLocalImage(){
     const input = this.main.window.document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -545,13 +628,13 @@ const Layer = self.Layer = class Layer {
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          const context = this.canvas.getContext('2d');
+          const context = this.canvasObj.getContext('2d');
           const h = {
             type: Layer.DoMethodType.FileLoad,
-            image: structuredClone(context.getImageData(0,0,this.canvas.width,this.canvas.height).data),
+            image: structuredClone(context.getImageData(0,0,this.canvasObj.width,this.canvasObj.height).data),
             size:{
-              w: this.canvas.width,
-              h: this.canvas.height,
+              w: this.canvasObj.width,
+              h: this.canvasObj.height,
             },
             loadFile: file,
             loadImage: null,
@@ -560,8 +643,10 @@ const Layer = self.Layer = class Layer {
               h: img.height,
             },
           };
-          this.canvas.width = img.width;
-          this.canvas.height = img.height;
+          this.canvasObj.width = img.width;
+          this.canvasObj.height = img.height;
+          this.canvasOpt.w = img.width;
+          this.canvasOpt.h = img.height;
           const ga = context.globalAlpha;
           const gcom = context.globalCompositeOperation;
           context.globalAlpha = 1;
@@ -569,10 +654,11 @@ const Layer = self.Layer = class Layer {
           context.drawImage(img,0,0);
           context.globalAlpha = ga;
           context.globalCompositeOperation = gcom;
-          h.loadImage = structuredClone(context.getImageData(0,0,this.canvas.width,this.canvas.height).data);
+          h.loadImage = structuredClone(context.getImageData(0,0,this.canvasObj.width,this.canvasObj.height).data);
           this.pushHistory(h);
+          this.updated = true;
           this.canvasUpdated = true;
-          this.do_write(parentLayer);
+          this.doWrite();
         };
         img.onerror = () => {
           alert('ERROR\nnot image file')
@@ -582,12 +668,6 @@ const Layer = self.Layer = class Layer {
       reader.readAsDataURL(file);
     };
     input.click();
-  }
-  getW(){
-    return this.canvas.width;
-  }
-  getH(){
-    return this.canvas.height;
   }
   pushHistory(h){
     if (this.historyMax != 0){
@@ -603,187 +683,418 @@ const Layer = self.Layer = class Layer {
       }
     }
   }
+  colorRGBA2Array(color){
+    if (color === null || color === undefined){
+      return [255,255,255,0];
+    }else if (color instanceof Array){
+      if (color.length == 3){
+        color.push(1);
+      }
+      return color;
+    }else if (color instanceof String){
+      if (color.startsWith('rgba(')){
+        color = color.replace('rgba(','').replace(')','');
+      }else if (color.startsWith('rgb(')){
+        color = color.replace('rgb(','').replace(')',',1');
+      }else{
+        return [255,255,255,0];
+      }
+      const c = color.split(',');
+      if (c.length == 3){
+        c.push(1);
+      }
+      return c;
+    }else{
+      return [255,255,255,0];
+    }
+  }
   fillRect(canvas,x,y,w,h,color){
     const context = canvas.getContext('2d');
-    const imageData = context.getImageData(x,y,w,h);
-    for(let i = 0; i < imageData.data.length; i += 4){
-      imageData.data[i] = color[0];
-      imageData.data[i + 1] = color[1];
-      imageData.data[i + 2] = color[2];
-      imageData.data[i + 3] = color[3];
+    const cary = this.colorRGBA2Array(color);
+    const contextimg = context.getImageData(x,y,w,h);
+    for(let i = 0; i < contextimg.data.length; i += 4){
+      contextimg.data[i] = cary[0];
+      contextimg.data[i + 1] = cary[1];
+      contextimg.data[i + 2] = cary[2];
+      contextimg.data[i + 3] = cary[3];
     }
-    context.putImageData(imageData,x,y);
+    context.putImageData(contextimg,x,y);
   }
   fill(canvas,color){
     this.fillRect(canvas,0,0,canvas.width,canvas.height,color);
   }
-  setOverlapMode(mode){
-    this.writeOption.overlap = mode;
-  }
-  getOverlapMode(){
-    return this.writeOption.overlap;
-  }
-  resize(parentLayer,w,h){
-    const canvas = this.main.window.document.createElement('canvas');
-    const canvasCache = this.main.window.document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    canvasCache.width = w;
-    canvasCache.height = h;
-    this.fill(canvas,[255,255,255,1]);
-    const thiscontext = this.canvas.getContext('2d');
-    const thisimg = thiscontext.getImageData(0,0,this.canvas.width,this.canvas.width);
-    thiscontext.putImageData(thisimg,0,0);
+  setCanvasPos(x,y){
+    const crect = this.getCanvasRect();
+    if (crect.x == x && crect.y == y){
+      return;
+    }
     this.pushHistory({
-      type: Layer.DoMethodType.Resize,
-      image: structuredClone(thisimg.data),
-      size:{
-        w: this.canvas.width,
-        h: this.canvas.height,
+      type: Layer.DoMethodType.CanvasPosChange,
+      pos:{
+        x: this.canvasOpt.x,
+        y: this.canvasOpt.y,
       },
     });
-    this.canvas = canvas;
-    this.canvasCache = canvasCache;
-    this.canvasUpdated = true;
-    this.do_write(parentLayer);
-  }
-  do_write_canvas(targetCanvas){
-    if (this.writeMode == Layer.WriteMode.Copy){
-      const pcontext = targetCanvas.getContext('2d');
-      pcontext.globalAlpha = this.writeOption.alpha;
-      pcontext.globalCompositeOperation = this.writeOption.overlap;
-      pcontext.drawImage(this.canvasCache,0,0,this.canvasCache.width,this.canvasCache.height,this.writeOption.x,this.writeOption.y,this.canvasCache.width,this.canvasCache.height);
-    }else{
-      // TDW
+    this.canvasOpt.x = x;
+    this.canvasOpt.y = y;
+    this.updated = true;
+    const xdiff = crect.x - x;
+    const ydiff = crect.y - y;
+    for(let l of this.linkedLayers.pos){
+      const lrect = l.getCanvasRect();
+      l.setCanvasPos(lrect.x - xdiff,y - ydiff);
+    }
+    for (let l of this.linkedLayers.move){
+      const lrect = l.getCanvasRect();
+      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff);
+      const lorect = l.getOutputRect();
+      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff);
     }
   }
-  do_write_childs(){
-    if (this.canvasUpdated == true){
-      this.canvasCache.width = this.canvas.width;
-      this.canvasCache.height = this.canvas.height;
-      const context = this.canvas.getContext('2d');
-      const contextCache = this.canvasCache.getContext('2d');
-      const img = context.getImageData(0,0,this.canvas.width, this.canvas.height);
-      contextCache.putImageData(img,0,0);
-      for(let c of this.childLayers){
-        c.do_write_childs();
-        c.do_write_canvas(this.canvasCache);
+  setCanvasSize(w,h){
+    const crect = this.getCanvasRect();
+    if (crect.w == w && crect.h == h){
+      return;
+    }
+    // copy
+    const canvas = this.main.window.document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    this.fill(canvas,[255,255,255,0]);
+    const thiscontext = this.canvasObj.getContext('2d');
+    const thisimg = thiscontext.getImageData(0,0,this.canvasObj.width,this.canvasObj.width);
+    const context = canvas.getContext('2d');
+    context.putImageData(thisimg,0,0,0,0,this.canvasObj.width,this.canvasObj.height);
+    this.pushHistory({
+      type: Layer.DoMethodType.CanvasSizeChange,
+      image: structuredClone(thisimg.data),
+      size:{
+        w: this.canvasObj.width,
+        h: this.canvasObj.height,
+      },
+    });
+    const nextimg = context.getImageData(0,0,w,h);
+    this.canvasObj.width = w;
+    this.canvasObj.height = h;
+    thiscontext.putImageData(nextimg,0,0);
+    this.canvasOpt.w = w;
+    this.canvasOpt.h = h;
+    for(let l of this.linkedLayers.canvasSize){
+      l.setCanvasSize(w,h);
+    }
+    this.updated = true;
+  }
+  getCanvasRect(){
+    return {
+      x: this.canvasOpt.x,
+      y: this.canvasOpt.y,
+      w: this.canvasOpt.w,
+      h: this.canvasOpt.h,
+    };
+  }
+  setCanvasAlpha(alpha){
+    if (this.canvasOpt.alpha == alpha){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.CanvasAlphaChange,
+      alpha: this.canvasOpt.alpha,
+    });
+    this.canvasOpt.alpha = alpha;
+    this.updated = true;
+  }
+  getCanvasAlpha(){
+    return this.canvasOpt.alpha;
+  }
+  setCanvasOverlapMode(mode){
+    if (this.canvasOpt.overlap == mode){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.CanvasOverlapChange,
+      overlap: this.canvasOpt.overlap,
+    });
+    this.canvasOpt.overlap = mode;
+    this.updated = true;
+  }
+  getCanvasOverlapMode(){
+    return this.canvasOpt.overlap;
+  }
+  setOutputPos(x,y){
+    const crect = this.getOutputRect();
+    if (crect.x == x && crect.y == y){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.OutputPosChange,
+      pos:{
+        x: this.outputOpt.x,
+        y: this.outputOpt.y,
+      },
+    });
+    this.outputOpt.x = x;
+    this.outputOpt.y = y;
+    this.updated = true;
+    const xdiff = crect.x - x;
+    const ydiff = crect.y - y;
+    for(let l of this.linkedLayers.window){
+      const lrect = l.getOutputRect();
+      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+    }
+    for(let l of this.linkedLayers.move){
+      const lrect = l.getCanvasRect();
+      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff);
+      const lorect = l.getOutputRect();
+      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff);
+    }
+  }
+  setOutputSize(w,h){
+    const crect = this.getOutputRect();
+    if (crect.w == w && crect.h == h){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.OutputSizeChange,
+      size:{ 
+        w: this.outputOpt.w,
+        h: this.outputOpt.h,
       }
-      this.canvasUpdated = false;
+    });
+    this.outputOpt.w = w;
+    this.outputOpt.h = h;
+    this.updated = true;
+    for(let l of this.linkedLayers.window){
+      const lrect = l.getOutputRect();
+      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+    }
+    for(let l of this.linkedLayers.size){
+      const lrect = l.getOutputRect();
+      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+    }
+  }
+  getOutputRect(){
+    return {
+      x: this.outputOpt.x,
+      y: this.outputOpt.y,
+      w: this.outputOpt.w,
+      h: this.outputOpt.h,
+    };
+  }
+  setOutputAlpha(alpha){
+    if (this.outputOpt.alpha == alpha){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.OutputAlphaChange,
+      alpha: this.outputOpt.alpha,
+    });
+    this.outputOpt.alpha = alpha;
+    this.updated = true;
+  }
+  getOutputAlpha(){
+    return this.outputOpt.alpha;
+  }
+  setOutputOverlapMode(mode){
+    if (this.outputOpt.overlap == mode){
+      return;
+    }
+    this.pushHistory({
+      type: Layer.DoMethodType.OutputOverlapChange,
+      overlap: this.outputOpt.overlap,
+    });
+    this.outputOpt.overlap = mode;
+    this.updated = true;
+  }
+  getOutputOverlapMode(){
+    return this.outputOpt.overlap;
+  }
+  calcCacheRect(){
+    let x = this.canvasOpt.x;
+    let y = this.canvasOpt.y;
+    let w = this.canvasOpt.w - this.canvasOpt.x;
+    let h = this.canvasOpt.h - this.canvasOpt.y;
+    if (this.outputOpt.x < x){
+      x = this.outputOpt.x;
+    }
+    if (this.outputOpt.y < y){
+      y = this.outputOpt.y;
+    }
+    if (this.outputOpt.w - this.outputOpt.x > w){
+      w = this.outputOpt.w - this.outputOpt.x;
+    }
+    if (this.outputOpt.h - this.outputOpt.y > h){
+      h = this.outputOpt.h - this.outputOpt.y;
+    }
+    for(let c of this.childLayers){
+      const r = c.calcCacheRect();
+      if (r.x < x){
+        x = r.x;
+      }
+      if (r.y < y){
+        y = r.y;
+      }
+      if (r.w - r.x > w){
+        w = r.w - r.x;
+      }
+      if (r.h - r.y > h){
+        h = r.h - r.y;
+      }
+    }
+    if (w < 0){
+      w = 1;
+    }
+    if (h < 0){
+      h = 1;
+    }
+    return {
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+    };
+  }
+  doWriteCanvas2Canvas(srcCanvasObj,destCanvasObj,srcCanvasOpt,destCanvasRect){
+    const context = destCanvasObj.getContext('2d');
+    context.globalAlpha = srcCanvasOpt.alpha;
+    context.globalCompositeOperation = srcCanvasOpt.overlap;
+    let srcX = 0;
+    let srcY = 0;
+    let srcW = srcCanvasObj.width;
+    let srcH = srcCanvasObj.height;
+    let destX = srcCanvasOpt.x - destCanvasRect.x;
+    let destY = srcCanvasOpt.y - destCanvasRect.y;
+    let destW = srcCanvasObj.width;
+    let destH = srcCanvasObj.height;    
+    context.drawImage(srcCanvasObj,srcX,srcY,srcW,srcH,destX,destY,destW,destH);
+  }
+  initCanvasCache(force){
+    let updated = false;
+    let canvasCacheRect = this.calcCacheRect();
+    if (canvasCacheRect.x != this.canvasCacheRect.x ||
+        canvasCacheRect.y != this.canvasCacheRect.y ||
+        canvasCacheRect.w != this.canvasCacheRect.w ||
+        canvasCacheRect.h != this.canvasCacheRect.h){
+      this.canvasCacheRect = canvasCacheRect;
+      this.canvasCacheObj.width = canvasCacheRect.w;
+      this.canvasCacheObj.height = canvasCacheRect.h;
+      updated = true;
       this.canvasCacheUpdated = true;
     }
-  }
-  do_write(parentLayer){
-    this.do_write_childs();
-
-    if (this.canvasCacheUpdated == true){
-      for(let c of this.parentLayers){
-        if (c instanceof modules.browser.Layer) {
-          c.canvasUpdated = true;
-          c.do_write(parentLayer);
-        } else if (c instanceof HTMLCanvasElement) {
-          if (c === this.main.basecanvas){
-            this.fill(parentLayer,[255,255,255,1]);
-          }
-          this.do_write_canvas(parentLayer);
-        } else {
-  
+    if (force == true || this.updated == true || this.canvasUpdated == true){
+      this.canvasCacheUpdated = true;
+    }
+    if (this.updated == true || this.canvasUpdated == true){
+      updated = true;
+    }
+    for(let c of this.childLayers){
+      if (c instanceof Layer){
+        if(c.initCanvasCache(force) == true){
+          updated = true;
         }
+      }else if (c instanceof HTMLCanvasElement){
+        updated = true;
       }
     }
-    if (this.parentLayers.length == 0){
-      if (this === this.main.clearpatternlayer) {
-        this.fill(this.main.basecanvas,[255,255,255,1]);
-        this.do_write_canvas(this.main.basecanvas);
-      }
-
-      if (parentLayer != null){
-        let targetCanvas = null;
-        if (parentLayer instanceof modules.browser.Layer) {
-          targetCanvas = parentLayer.canvasCache;
-        } else if (parentLayer instanceof HTMLCanvasElement) {
-          targetCanvas = parentLayer;
-        } else {
-  
-        }
-        if (targetCanvas != null){
-          if (targetCanvas === this.main.basecanvas){
-            this.fill(targetCanvas,[255,255,255,1]);
-            this.main.clearpatternlayer.do_write_canvas(this.main.basecanvas);
-          }else{
-            this.do_write_canvas(targetCanvas);
-          }
-        }
-      }else{
-        if (this === this.main.clearpatternlayer) {
-          this.fill(this.main.basecanvas,[255,255,255,1]);
-          this.do_write_canvas(this.main.basecanvas);
-        }
-      }  
+    if (force == true || updated == true){
+      this.fill(this.canvasCacheObj,[255,255,255,0]);
+      this.canvasCacheUpdated = true;
+      updated = true;
     }
+    return updated;
   }
-  pre_change(parentLayer,writeMode,writeOption){
-    const nowWriteMode = this.writeMode;
-    const nowWriteOption = this.writeOption;
-    this.writeMode = writeMode;
-    this.writeOption = writeOption;
-    this.do_write(parentLayer);
-    this.writeMode = nowWriteMode;
-    this.writeOption = nowWriteOption;
+  doWriteChildLayers2Cache(force){
+    let updated = false;
+    for(let c of this.childLayers){
+      if (c instanceof Layer){
+        const cupdated = c.doWriteChildLayers2Cache(force);
+        if (force || cupdated == true || this.updated == true || this.canvasUpdated == true || c.canvasCacheUpdated == true || this.canvasCacheUpdated == true){
+          this.doWriteCanvas2Canvas(c.canvasCacheObj,this.canvasCacheObj,c.outputOpt,this.canvasCacheRect);
+          c.updated = false;
+          c.canvasUpdated = false;
+          c.canvasCacheUpdated = false;
+          updated = true;
+        }
+      }else if (c instanceof HTMLCanvasElement){
+        this.doWriteCanvas2Canvas(c,this.canvasCache,{x:0,y:0,w:c.width,h:c.height,alpha:1,overlap:Layer.OverlapType.SourceOut},this.canvasCacheRect);
+        updated = true;
+      }
+    }
+    if (updated == true){
+      this.canvasCacheUpdated = true;
+    }
+    return updated;
   }
-  do_change(parentLayer,writeMode,whileOption){
-    this.pushHistory({
-      type: Layer.DoMethodType.ChanegeWriteMode,
-      writeMode: this.writeMode,
-      writeOption: structuredClone(this.writeOption),
-    });
-    if (writeMode == null) return;
-    this.pre_change(parentLayer,writeMode,whileOption);
-    this.writeMode = writeMode;
-    this.writeOption = structuredClone(writeOption);
+  doWriteCanvas2Cache(force){
+    let updated = this.doWriteChildLayers2Cache(force);
+    if (force || updated == true || this.updated == true || this.canvasUpdated == true || this.canvasCacheUpdated == true){
+      this.doWriteCanvas2Canvas(this.canvasObj,this.canvasCacheObj,this.canvasOpt,this.canvasCacheRect);
+      this.updated = false;
+      this.canvasUpdated = false;
+      this.canvasCacheUpdated = true;
+      updated = true;
+    }
+    return updated;
+  }
+  doWriteCanvasCache2Parent(force){
+    const initUpdate = this.initCanvasCache(force);
+    let updated = this.doWriteCanvas2Cache(force);
+    if (initUpdate == true || updated == true || this.canvasCacheUpdated == true){
+      for(let p of this.parentLayers){
+        if (p instanceof Layer){
+          p.initCanvasCache(force);
+          p.doWriteCanvas2Cache(force);
+          this.doWriteCanvas2Canvas(this.canvasCacheObj,p.canvasCacheObj,this.outputOpt,p.canvasCacheRect);
+          p.canvasCacheUpdated = true;
+        }else if (p instanceof HTMLCanvasElement){
+          this.doWriteCanvas2Canvas(this.canvasCacheObj,p,this.outputOpt,{x:0,y:0,w:p.width,h:p.height,alpha:1,overlap:Layer.OverlapType.SourceOut});
+          p.canvasCacheUpdated = true;
+        }
+      }
+      for(let p of this.parentLayers){
+        if (p instanceof Layer){
+          p.doWriteCanvasCache2Parent(force);
+        }else if (p instanceof HTMLCanvasElement){
+          // nothing
+        }
+      }
+      updated = true;
+    }
+    return updated;
+  }
+  doWrite(force){
+    return this.doWriteCanvasCache2Parent(force);
+  }
+
+  saveBackup(){
+    this.canvasBackupObj.width = this.canvasObj.width;
+    this.canvasBackupObj.height = this.canvasObj.height;
+    const context = this.canvasObj.getContext('2d');
+    const contextBackup = this.canvasBackupObj.getContext('2d');
+    const img = context.getImageData(0,0,this.canvasObj.width,this.canvasObj.height);
+    contextBackup.putImageData(img,0,0);
   }
   restoreBackup(){
-    this.canvas.width = this.canvasBackup.width;
-    this.canvas.height = this.canvasBackup.height;
-    const context = this.canvas.getContext('2d');
-    const contextBackup = this.canvasBackup.getContext('2d');
-    const img = contextBackup.getImageData(0,0,this.canvas.width,this.canvas.height);
+    this.canvasObj.width = this.canvasBackupObj.width;
+    this.canvasObj.height = this.canvasBackupObj.height;
+    const context = this.canvasObj.getContext('2d');
+    const contextBackup = this.canvasBackupObj.getContext('2d');
+    const img = contextBackup.getImageData(0,0,this.canvasObj.width,this.canvasObj.height);
     context.putImageData(img,0,0);
     this.canvasUpdated = true;
   }
-  pre_method(parentLayer, useBackupCanvas, method, opt){
-    if (method == null) return null;
-    if (useBackupCanvas == true){
-      this.canvasBackup.width = this.canvas.width;
-      this.canvasBackup.height = this.canvas.height;
-      const context = this.canvas.getContext('2d');
-      const contextBackup = this.canvasBackup.getContext('2d');
-      const img = context.getImageData(0,0,h.size.w, h.size.h);
-      contextBackup.putImageData(img,0,0);
-    }
-    let r = method(this.canvas, opt);
-    this.canvasUpdated = true;
-    this.do_write(parentLayer);
-    if (useBackupCanvas == true){
-      this.restoreBackup();
-      this.canvasUpdated = true;
-    }
-    return r;
-  }
-  do_method(parentLayer,method, opt){
-    const context = this.canvas.getContext('2d');
+  doMethod(method, opt){
+    if (method === null || method === undefined) return null;
+    const context = this.canvasObj.getContext('2d');
     this.pushHistory({
       type: Layer.DoMethodType.Execute,
       method,
       opt: structuredClone(opt),
-      image: structuredClone(context.getImageData(0,0,this.canvas.width,this.canvas.height).data),
-      size:{
-        w: this.canvas.width,
-        h: this.canvas.height,
-      },
+      image: structuredClone(context.getImageData(0,0,this.canvasObj.width,this.canvasObj.height).data),
+      imageOpt: structuredClone(this.canvasOpt),
     });
-    if (method == null) return null;
-    return this.pre_method(parentLayer, false, method, opt);
+    const r = method(this.canvasObj,opt);
+    this.canvasUpdated = true;
+    this.doWrite();
   }
   setHistoryMax(v){
     this.historyMax = v;
@@ -826,48 +1137,26 @@ const Layer = self.Layer = class Layer {
     }
     this.history.pop();
   }
-  do_history(parentLayer,h){
-    if (h.type == Layer.DoMethodType.Execute){
-      this.canvas.width = h.size.w;
-      this.canvas.height = h.size.h;
-      const context = this.canvas.getContext('2d');
-      context.putImageData(new ImageData(h.image,h.w,h.h),0,0);
-      this.canvasUpdated = true;
-    }else if (h.type == Layer.DoMethodType.ChanegeWriteMode){
-      this.writeMode = h.writeMode;
-      this.writeOption = structuredClone(h.whileOption);
-    }else if (h.type == Layer.DoMethodType.Resize){
-      this.canvas.width = h.size.w;
-      this.canvas.height = h.size.h;
-      const context = this.canvas.getContext('2d');
-      context.putImageData(new ImageData(h.image,h.w,h.h),0,0);
-      this.canvasUpdated = true;
-    }else if (h.type == Layer.DoMethodType.FileLoad){
-      this.canvas.width = h.size.w;
-      this.canvas.height = h.size.h;
-      const context = this.canvas.getContext('2d');
-      context.putImageData(new ImageData(h.image,h.size.w,h.size.h),0,0);
-      this.canvasUpdated = true;
-    }else{
-    }
-    this.do_write(parentLayer);
+  doHistory(h){
+    // TODO
+    this.doWrite();
   }
-  historyBack(parentLayer){
+  historyBack(){
     if (this.history.length < 1){
       return;
     }
     if (this.historyPos == -1){
       this.historyPos = this.history.length - 1;
-      this.do_history(parentLayer,this.history[this.historyPos]);
+      this.doHistory(this.history[this.historyPos]);
     }else{
       if (this.historyPos <= 0){
         return;
       }
-      this.do_history(parentLayer,this.history[this.historyPos]);
+      this.doHistory(this.history[this.historyPos]);
       this.historyPos -= 1;
     }
   }
-  historyForward(parentLayer){
+  historyForward(){
     if (this.history.length < 1){
       return;
     }
@@ -877,11 +1166,14 @@ const Layer = self.Layer = class Layer {
     if (this.historyPos == -1){
       return;
     }
-    this.do_history(parentLayer,this.history[this.historyPos]);
     this.historyPos += 1;
     if (this.historyPos > this.history.length - 1){
       this.historyPos = -1;
     }
+    if (this.historyPos == -1){
+      return;
+    }
+    this.doHistory(this.history[this.historyPos]);
   }
 }
 
@@ -1017,26 +1309,52 @@ const Main = self.Main = class Main {
     this.history = {
       maxdepth: -1,
     };
-    this.basecanvas = this.window.document.createElement("canvas");
-    this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
-    this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
-    this.targetObj.appendChild(this.basecanvas);
-    this.clearpatternlayer = new modules.browser.Layer(this);
-    this.clearpatternlayer.setHistoryMax(0);
+    this.baseCanvas = this.window.document.createElement("canvas");
+    this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
+    this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
+    this.defaultLayer = {
+      bgcolor: "rgba(255,255,255,1)",
+      fgcolor: "rgba(0,0,0,1)",
+      width: this.baseCanvas.width,
+      height: this.baseCanvas.height,
+    };
+    this.targetObj.appendChild(this.baseCanvas);
+
+    this.viewerLayer = new modules.browser.Layer(this);
+    this.viewerLayer.setHistoryMax(0);
+    this.viewerLayer.addParentLayer(this.baseCanvas);
+
+    this.clearpatternLayer = new modules.browser.Layer(this);
+    this.clearpatternLayer.setHistoryMax(0);
+    this.clearpatternLayer.addParentLayer(this.viewerLayer);
+    this.viewerLayer.addChildLayer(this.clearpatternLayer);
+    this.clearpatternLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.viewerLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+
+    this.baseLayer = new modules.browser.Layer(this);
+    this.baseLayer.setHistoryMax(0);
+    this.baseLayer.addParentLayer(this.viewerLayer);
+    this.viewerLayer.addChildLayer(this.baseLayer);
+    this.baseLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.viewerLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+
     this.layer = new modules.browser.Layer(this);
+    this.baseLayer.addChildLayer(this.layer);
+    this.layer.addParentLayer(this.baseLayer);
+
     this.layer2 = new modules.browser.Layer(this);
-    //this.clearpatternlayer.addParentLayer(this.basecanvas);
-    this.clearpatternlayer.addChildLayer(this.layer);
-    this.layer.addParentLayer(this.clearpatternlayer);
-    this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
-    this.clearpatternlayer.do_write(this.basecanvas);
+    this.layer.addChildLayer(this.layer2);
+    this.layer2.addParentLayer(this.layer);
+
+    this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
+    this.viewerLayer.doWrite();
     this.window.addEventListener("DOMContentLoaded", () =>{
       const ovserver = new ResizeObserver(() => {
-        this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
-        this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
-        this.clearpatternlayer.resize(null, this.basecanvas.width, this.basecanvas.height);
-        this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
-        this.clearpatternlayer.do_write(this.basecanvas);
+        this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
+        this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
+        this.viewerLayer.setCanvasSize(this.baseCanvas.width, this.baseCanvas.height);
+        this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
+        this.viewerLayer.doWrite();
       });
       ovserver.observe(this.targetObj);
     });

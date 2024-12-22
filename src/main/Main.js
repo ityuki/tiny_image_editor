@@ -16,26 +16,52 @@ const Main = self.Main = class Main {
     this.history = {
       maxdepth: -1,
     };
-    this.basecanvas = this.window.document.createElement("canvas");
-    this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
-    this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
-    this.targetObj.appendChild(this.basecanvas);
-    this.clearpatternlayer = new modules.browser.Layer(this);
-    this.clearpatternlayer.setHistoryMax(0);
+    this.baseCanvas = this.window.document.createElement("canvas");
+    this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
+    this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
+    this.defaultLayer = {
+      bgcolor: "rgba(255,255,255,1)",
+      fgcolor: "rgba(0,0,0,1)",
+      width: this.baseCanvas.width,
+      height: this.baseCanvas.height,
+    };
+    this.targetObj.appendChild(this.baseCanvas);
+
+    this.viewerLayer = new modules.browser.Layer(this);
+    this.viewerLayer.setHistoryMax(0);
+    this.viewerLayer.addParentLayer(this.baseCanvas);
+
+    this.clearpatternLayer = new modules.browser.Layer(this);
+    this.clearpatternLayer.setHistoryMax(0);
+    this.clearpatternLayer.addParentLayer(this.viewerLayer);
+    this.viewerLayer.addChildLayer(this.clearpatternLayer);
+    this.clearpatternLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.viewerLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+
+    this.baseLayer = new modules.browser.Layer(this);
+    this.baseLayer.setHistoryMax(0);
+    this.baseLayer.addParentLayer(this.viewerLayer);
+    this.viewerLayer.addChildLayer(this.baseLayer);
+    this.baseLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.viewerLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+
     this.layer = new modules.browser.Layer(this);
+    this.baseLayer.addChildLayer(this.layer);
+    this.layer.addParentLayer(this.baseLayer);
+
     this.layer2 = new modules.browser.Layer(this);
-    //this.clearpatternlayer.addParentLayer(this.basecanvas);
-    this.clearpatternlayer.addChildLayer(this.layer);
-    this.layer.addParentLayer(this.clearpatternlayer);
-    this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
-    this.clearpatternlayer.do_write(this.basecanvas);
+    this.layer.addChildLayer(this.layer2);
+    this.layer2.addParentLayer(this.layer);
+
+    this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
+    this.viewerLayer.doWrite();
     this.window.addEventListener("DOMContentLoaded", () =>{
       const ovserver = new ResizeObserver(() => {
-        this.basecanvas.width = this.targetObj.getBoundingClientRect().width;
-        this.basecanvas.height = this.targetObj.getBoundingClientRect().height;
-        this.clearpatternlayer.resize(null, this.basecanvas.width, this.basecanvas.height);
-        this.clearpatternlayer.do_method(null,modules.canvasMethod.fillClearPattern,null);
-        this.clearpatternlayer.do_write(this.basecanvas);
+        this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
+        this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
+        this.viewerLayer.setCanvasSize(this.baseCanvas.width, this.baseCanvas.height);
+        this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
+        this.viewerLayer.doWrite();
       });
       ovserver.observe(this.targetObj);
     });
