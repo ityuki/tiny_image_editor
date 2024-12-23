@@ -22,6 +22,7 @@ const Main = self.Main = class Main {
     this.defaultLayer = {
       bgcolor: "rgba(255,255,255,1)",
       fgcolor: "rgba(0,0,0,1)",
+      externalColor: "rgba(0,216,216,1)",
       width: this.baseCanvas.width,
       height: this.baseCanvas.height,
     };
@@ -29,14 +30,16 @@ const Main = self.Main = class Main {
 
     this.viewerLayer = new modules.browser.Layer(this);
     this.viewerLayer.setHistoryMax(0);
+    this.viewerLayer.setExternalColor(this.defaultLayer.externalColor);
+    this.viewerLayer.setCanvasSize(0,0);
     this.viewerLayer.addParentLayer(this.baseCanvas);
 
     this.clearpatternLayer = new modules.browser.Layer(this);
     this.clearpatternLayer.setHistoryMax(0);
     this.clearpatternLayer.addParentLayer(this.viewerLayer);
     this.viewerLayer.addChildLayer(this.clearpatternLayer);
-    this.clearpatternLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
-    this.viewerLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    //this.clearpatternLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    //this.viewerLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
 
     this.baseLayer = new modules.browser.Layer(this);
     this.baseLayer.setHistoryMax(0);
@@ -60,6 +63,13 @@ const Main = self.Main = class Main {
         this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
         this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
         this.viewerLayer.setCanvasSize(this.baseCanvas.width, this.baseCanvas.height);
+        this.viewerLayer.setOutputPos(0,0);
+        this.viewerLayer.setOutputSize(0,0);
+        const cacheRect = this.viewerLayer.calcCacheRect();
+        this.viewerLayer.setCanvasSize(0,0);
+        this.viewerLayer.setOutputPos(cacheRect.x,cacheRect.y);
+        this.viewerLayer.setOutputSize(cacheRect.w,cacheRect.h);
+        //this.viewerLayer.setOutputSize(this.baseCanvas.width, this.baseCanvas.height);
         this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
         this.viewerLayer.doWrite();
       });
