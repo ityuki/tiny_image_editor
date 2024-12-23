@@ -47,14 +47,20 @@ const Main = self.Main = class Main {
     this.viewerLayer.addChildLayer(this.baseLayer);
     this.baseLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
     this.viewerLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.baseLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.Move);
+    this.clearpatternLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
 
     this.layer = new modules.browser.Layer(this);
     this.baseLayer.addChildLayer(this.layer);
     this.layer.addParentLayer(this.baseLayer);
+    this.baseLayer.addLinkedLayer(this.layer,modules.browser.Layer.LinkedLayerType.Move);
+    this.layer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
 
     this.layer2 = new modules.browser.Layer(this);
-    this.layer.addChildLayer(this.layer2);
-    this.layer2.addParentLayer(this.layer);
+    this.baseLayer.addChildLayer(this.layer2);
+    this.layer2.addParentLayer(this.baseLayer);
+    this.baseLayer.addLinkedLayer(this.layer2,modules.browser.Layer.LinkedLayerType.Move);
+    this.layer2.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
 
     this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
     this.viewerLayer.doWrite();

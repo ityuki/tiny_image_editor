@@ -282,7 +282,7 @@ const Layer = self.Layer = class Layer {
   fill(canvas,color){
     this.fillRect(canvas,0,0,canvas.width,canvas.height,color);
   }
-  setCanvasPos(x,y){
+  setCanvasPos(x,y,callers){
     const crect = this.getCanvasRect();
     if (crect.x == x && crect.y == y){
       return;
@@ -299,18 +299,26 @@ const Layer = self.Layer = class Layer {
     this.updated = true;
     const xdiff = crect.x - x;
     const ydiff = crect.y - y;
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     for(let l of this.linkedLayers.pos){
       const lrect = l.getCanvasRect();
-      l.setCanvasPos(lrect.x - xdiff,y - ydiff);
+      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
     }
     for (let l of this.linkedLayers.move){
       const lrect = l.getCanvasRect();
-      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff);
+      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
       const lorect = l.getOutputRect();
-      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff);
+      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff, nextcallers);
     }
   }
-  setCanvasSize(w,h){
+  setCanvasSize(w,h,callers){
     const crect = this.getCanvasRect();
     if (crect.w == w && crect.h == h){
       return;
@@ -371,10 +379,18 @@ const Layer = self.Layer = class Layer {
       this.canvasOpt.w = w;
       this.canvasOpt.h = h;
     }
-    for(let l of this.linkedLayers.canvasSize){
-      l.setCanvasSize(w,h);
-    }
     this.updated = true;
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
+    for(let l of this.linkedLayers.canvasSize){
+      l.setCanvasSize(w,h,nextcallers);
+    }
   }
   getCanvasRect(){
     return {
@@ -412,7 +428,7 @@ const Layer = self.Layer = class Layer {
   getCanvasOverlapMode(){
     return this.canvasOpt.overlap;
   }
-  setOutputPos(x,y){
+  setOutputPos(x,y,callers){
     const crect = this.getOutputRect();
     if (crect.x == x && crect.y == y){
       return;
@@ -429,18 +445,26 @@ const Layer = self.Layer = class Layer {
     this.updated = true;
     const xdiff = crect.x - x;
     const ydiff = crect.y - y;
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     for(let l of this.linkedLayers.window){
       const lrect = l.getOutputRect();
-      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+      l.setOutputPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
     }
     for(let l of this.linkedLayers.move){
       const lrect = l.getCanvasRect();
-      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff);
+      l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
       const lorect = l.getOutputRect();
-      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff);
+      l.setOutputPos(lorect.x - xdiff,lorect.y - ydiff,nextcallers);
     }
   }
-  setOutputSize(w,h){
+  setOutputSize(w,h,callers){
     const crect = this.getOutputRect();
     if (crect.w == w && crect.h == h){
       return;
@@ -455,13 +479,22 @@ const Layer = self.Layer = class Layer {
     this.outputOpt.w = w;
     this.outputOpt.h = h;
     this.updated = true;
-    for(let l of this.linkedLayers.window){
-      const lrect = l.getOutputRect();
-      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this) >= 0){
+        return;
+      }
     }
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     for(let l of this.linkedLayers.size){
       const lrect = l.getOutputRect();
-      l.setOutputPos(lrect.x - xdiff,y - ydiff);
+      l.setOutputPos(lrect.x - xdiff,lrecy.y - ydiff, nextcallers);
     }
   }
   getOutputRect(){
@@ -565,8 +598,8 @@ const Layer = self.Layer = class Layer {
     let srcY = srcCanvasOpt.y;
     let srcW = srcCanvasObj.width;
     let srcH = srcCanvasObj.height;
-    let destX = (srcCanvasOpt.x - destCanvasRect.x);
-    let destY = (srcCanvasOpt.y - destCanvasRect.y);
+    let destX = (destCanvasRect.x);
+    let destY = (destCanvasRect.y);
     let destW = srcCanvasObj.width;
     let destH = srcCanvasObj.height;
     console.log(srcCanvasObj,destCanvasObj)
@@ -660,6 +693,9 @@ const Layer = self.Layer = class Layer {
       this.canvasUpdated = false;
       updated = true;
     }
+    const copyopt = structuredClone(this.canvasCacheRect);
+    copyopt.x = 0;
+    copyopt.y = 0;
     for(let c of this.childLayers){
       if (c instanceof Layer){
         let cupdated = false;
@@ -670,12 +706,12 @@ const Layer = self.Layer = class Layer {
           c.canvasCacheUpdated = true;
         }
         if (cupdated == true || c.canvasCacheUpdated == true){
-          this.doWriteCanvas2Canvas(c.canvasCacheObj,this.canvasCacheObj,c.outputOpt,this.canvasCacheRect);
+          this.doWriteCanvas2Canvas(c.canvasCacheObj,this.canvasCacheObj,c.outputOpt,copyopt);
           c.canvasCacheUpdated = false;
           updated = true;
         }
       }else if (c instanceof HTMLCanvasElement){
-        this.doWriteCanvas2Canvas(c,this.canvasCache,{x:0,y:0,w:c.width,h:c.height,alpha:1,overlap:Layer.OverlapType.SourceOut},this.canvasCacheRect);
+        this.doWriteCanvas2Canvas(c,this.canvasCache,{x:0,y:0,w:c.width,h:c.height,alpha:1,overlap:Layer.OverlapType.SourceOut},copyopt);
         updated = true;
       }
     }
@@ -687,8 +723,10 @@ const Layer = self.Layer = class Layer {
   doWriteCanvas2Cache(force){
     let updated = this.doWriteChildLayers2Cache(force);
     if (force || updated == true || this.updated == true || this.canvasUpdated == true || this.canvasCacheUpdated == true){
-      console.log('doWriteCanvas2Cache',this);
-      this.doWriteCanvas2Canvas(this.canvasObj,this.canvasCacheObj,this.canvasOpt,this.canvasCacheRect);
+      const copyopt = structuredClone(this.canvasOpt);
+      copyopt.x = 0;
+      copyopt.y = 0;
+      this.doWriteCanvas2Canvas(this.canvasObj,this.canvasCacheObj,copyopt,this.canvasOpt);
       this.updated = false;
       this.canvasUpdated = false;
       this.canvasCacheUpdated = true;
