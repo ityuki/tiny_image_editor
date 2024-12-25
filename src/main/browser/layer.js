@@ -287,6 +287,14 @@ const Layer = self.Layer = class Layer {
     if (crect.x == x && crect.y == y){
       return;
     }
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     this.pushHistory({
       type: Layer.DoMethodType.CanvasPosChange,
       pos:{
@@ -299,14 +307,6 @@ const Layer = self.Layer = class Layer {
     this.updated = true;
     const xdiff = crect.x - x;
     const ydiff = crect.y - y;
-    let nextcallers = [];
-    if (callers !== null && callers !== undefined){
-      if (callers.indexOf(this.id) >= 0){
-        return;
-      }
-      nextcallers = structuredClone(callers);
-    }
-    nextcallers.push(this.id);
     for(let l of this.linkedLayers.pos){
       const lrect = l.getCanvasRect();
       l.setCanvasPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
@@ -323,6 +323,14 @@ const Layer = self.Layer = class Layer {
     if (crect.w == w && crect.h == h){
       return;
     }
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     // copy
     if (w > 0 && h > 0){
       const canvas = this.main.window.document.createElement('canvas');
@@ -380,14 +388,6 @@ const Layer = self.Layer = class Layer {
       this.canvasOpt.h = h;
     }
     this.updated = true;
-    let nextcallers = [];
-    if (callers !== null && callers !== undefined){
-      if (callers.indexOf(this.id) >= 0){
-        return;
-      }
-      nextcallers = structuredClone(callers);
-    }
-    nextcallers.push(this.id);
     for(let l of this.linkedLayers.canvasSize){
       l.setCanvasSize(w,h,nextcallers);
     }
@@ -433,6 +433,14 @@ const Layer = self.Layer = class Layer {
     if (crect.x == x && crect.y == y){
       return;
     }
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     this.pushHistory({
       type: Layer.DoMethodType.OutputPosChange,
       pos:{
@@ -445,14 +453,6 @@ const Layer = self.Layer = class Layer {
     this.updated = true;
     const xdiff = crect.x - x;
     const ydiff = crect.y - y;
-    let nextcallers = [];
-    if (callers !== null && callers !== undefined){
-      if (callers.indexOf(this.id) >= 0){
-        return;
-      }
-      nextcallers = structuredClone(callers);
-    }
-    nextcallers.push(this.id);
     for(let l of this.linkedLayers.window){
       const lrect = l.getOutputRect();
       l.setOutputPos(lrect.x - xdiff,lrect.y - ydiff,nextcallers);
@@ -469,6 +469,14 @@ const Layer = self.Layer = class Layer {
     if (crect.w == w && crect.h == h){
       return;
     }
+    let nextcallers = [];
+    if (callers !== null && callers !== undefined){
+      if (callers.indexOf(this.id) >= 0){
+        return;
+      }
+      nextcallers = structuredClone(callers);
+    }
+    nextcallers.push(this.id);
     this.pushHistory({
       type: Layer.DoMethodType.OutputSizeChange,
       size:{ 
@@ -484,14 +492,6 @@ const Layer = self.Layer = class Layer {
         return;
       }
     }
-    let nextcallers = [];
-    if (callers !== null && callers !== undefined){
-      if (callers.indexOf(this.id) >= 0){
-        return;
-      }
-      nextcallers = structuredClone(callers);
-    }
-    nextcallers.push(this.id);
     for(let l of this.linkedLayers.size){
       const lrect = l.getOutputRect();
       l.setOutputPos(lrect.x - xdiff,lrecy.y - ydiff, nextcallers);
