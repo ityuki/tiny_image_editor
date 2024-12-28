@@ -1038,8 +1038,15 @@ const Canvas = self.Canvas = class Canvas {
       return;
     }
     if (angle === 180){
-      this.flipHorizontal();
-      this.flipVertical();
+      const tcanvas = this.main.window.document.createElement('canvas');
+      tcanvas.width = this.raw.width;
+      tcanvas.height = this.raw.height;
+      this.rcopy(tcanvas);
+      this.raw.width = tcanvas.width;
+      this.raw.height = tcanvas.height;
+      const context = this.raw.getContext('2d');
+      context.scale(-1,-1);
+      context.drawImage(tcanvas,-tcanvas.width,-tcanvas.height);
       return;
     }
     const tcanvas = this.main.window.document.createElement('canvas');
