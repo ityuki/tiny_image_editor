@@ -962,33 +962,35 @@ const Canvas = self.Canvas = class Canvas {
     let ey = null;
     const context = this.raw.getContext('2d');
     const img = context.getImageData(0,0,this.raw.width,this.raw.height);
-    for(let i = 0; i < this.raw.width; i++){
-      let tx = null;
-      for(let j = 0; j < this.raw.height; j++){
+    for(let j = 0; j < this.raw.height; j++){
+      let tminx = null;
+      let tmaxx = null;
+      for(let i = 0; i < this.raw.width; i++){
         const index = (j * this.raw.width + i) * 4;
         if (img.data[index + 3] !== 0){
-          if (tx === null){
-            tx = i;
+          if (tminx === null){
+            tminx = i;
           }
+          tmaxx = i;
           if (sy === null){
             sy = j;
           }
           ey = j;
         }
       }
-      if (tx !== null){
+      if (tminx !== null){
         if (sx === null){
-          sx = i;
+          sx = tminx;
         }else{
-          if (tx < sx){
-            sx = tx;
+          if (tminx < sx){
+            sx = tminx;
           }
         }
         if (ex === null){
-          ex = i;
+          ex = tmaxx;
         }else{
-          if (tx > ex){
-            ex = tx;
+          if (tmaxx > ex){
+            ex = tmaxx;
           }
         }
       }
@@ -1030,21 +1032,56 @@ const Canvas = self.Canvas = class Canvas {
   rotateCenter(angle){
     return this.rotate(this.raw.width / 2,this.raw.height / 2,angle);
   }
-  rotateAutosize(centerX,centerY,angle){
-    const dx = Math.abs(centerX);
-    const dy = Math.abs(centerY);
+  rotateAutosize(angle){
+    angle = angle % 360;
+    if (angle === 0){
+      return;
+    }
+    if (angle === 180){
+      this.flipHorizontal();
+      this.flipVertical();
+      return;
+    }
     const tcanvas = this.main.window.document.createElement('canvas');
     tcanvas.width = this.raw.width;
     tcanvas.height = this.raw.height;
     this.rcopy(tcanvas);
-    this.raw.width = (tcanvas.width+dx)*2;
-    this.raw.height = (tcanvas.height+dy)*2;
+    if (angle === 90 || angle === 270){
+      this.raw.width = tcanvas.height;
+      this.raw.height = tcanvas.width;
+      const context = this.raw.getContext('2d');
+      const timg = tcanvas.getContext('2d').getImageData(0,0,tcanvas.width,tcanvas.height);
+      const img = this.raw.getContext('2d').getImageData(0,0,this.raw.width,this.raw.height);
+      for(let j = 0; j < this.raw.height; j++){
+        for(let i = 0; i < this.raw.width; i++){
+          if (angle === 90){
+            const index = (j * this.raw.width + i) * 4;
+            const tindex = ((this.raw.width - i - 1) * tcanvas.width + j) * 4;
+            img.data[index] = timg.data[tindex];
+            img.data[index + 1] = timg.data[tindex + 1];
+            img.data[index + 2] = timg.data[tindex + 2];
+            img.data[index + 3] = timg.data[tindex + 3];
+          }else{
+            const index = (j * this.raw.width + i) * 4;
+            const tindex = (i * tcanvas.width + (this.raw.height - j - 1)) * 4;
+            img.data[index] = timg.data[tindex];
+            img.data[index + 1] = timg.data[tindex + 1];
+            img.data[index + 2] = timg.data[tindex + 2];
+            img.data[index + 3] = timg.data[tindex + 3];
+          }
+        }
+      }
+      context.putImageData(img,0,0);
+      return;
+    }
+    this.raw.width = tcanvas.width*2;
+    this.raw.height = tcanvas.height*2;
     this.fill([255,255,255,0]);
     const context = this.raw.getContext('2d');
-    context.translate(centerX+tcanvas.width,centerY+tcanvas.height);
+    context.translate(tcanvas.width,tcanvas.height);
     context.rotate(angle * Math.PI / 180);
     context.drawImage(tcanvas,-tcanvas.width / 2,-tcanvas.height / 2);
-    //this.fit();
+    this.fit();
   }
   flipHorizontal(){
     const tcanvas = this.main.window.document.createElement('canvas');
