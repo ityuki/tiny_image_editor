@@ -458,6 +458,53 @@ const module_browser = self.module_browser = (function(){
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser";
+app.modules.browser.canvasMethod = {};
+
+const canvasMethod = self.canvasMethod = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.canvasMethod";
+// ================================================
+// module: browser.canvasMethod , from: fillClearPattern.js
+// ================================================
+const fillClearPattern = self.fillClearPattern = function fillClearPattern(canvas, opt) {
+  if (!opt) {
+    opt = {};
+  }
+  if (!canvas) {
+    return;
+  }
+  const rawCanvas = parent.Canvas.getRawCanvas(canvas);
+  if (!rawCanvas) {
+    return;
+  }
+  const context = rawCanvas.getContext('2d');
+  // fill white
+  context.fillStyle = 'rgba(255, 255, 255, 1)';
+  context.fillRect(0, 0, rawCanvas.width, rawCanvas.height);
+  const len = 16;
+  for(let x=0;x<rawCanvas.width;x+=len){
+    for(let y=0;y<rawCanvas.height;y+=len){
+      // clear pattern
+      context.fillStyle = 'rgba(224, 224, 224, 1)';
+      context.beginPath();
+      context.moveTo(x+len/2,y);
+      context.lineTo(x+len,y+len/2);
+      context.lineTo(x+len/2,y+len);
+      context.lineTo(x,y+len/2);
+      context.closePath();
+      context.fill();
+    }
+  }
+}
+
+
+Object.assign(app.modules.browser.canvasMethod,self);
+
+return self;
+}).call({},self);
 app.modules.browser.layer = {};
 
 const layer = self.layer = (function(){
@@ -471,14 +518,39 @@ const layer = self.layer = (function(){
 // ================================================
 const BaseLayer = self.BaseLayer = class BaseLayer {
   static currentLayerId = 0;
-  constructor(main) {
+  constructor(main,width,height) {
     BaseLayer.currentLayerId++;
     this.id = BaseLayer.currentLayerId;
     this.main = main;
     this.aboveLayers = [];
     this.belowLayers = [];
+    this.layerChain = {
+      last: null,
+      next: null,
+    }
     this.position = { x: 0, y: 0 };
-    this.size = { width: 0, height: 0 };
+    this.canvas = new parent.Canvas(main,width,height);
+    this.syncPositionLayers = [];
+  }
+  addSyncPositionLayer(layer) {
+    this.syncPositionLayers.push(layer);
+  }
+  removeSyncPositionLayer(layer) {
+    this.syncPositionLayers = this.syncPositionLayers.filter(l => l !== layer);
+  }
+  setPosition(x, y) {
+    this.position.x = x;
+    this.position.y = y;
+    for (let layer of this.syncPositionLayers) {
+      layer.setPosition(x, y);
+    }
+  }
+  movePosition(x, y) {
+    this.position.x += x;
+    this.position.y += y;
+    for (let layer of this.syncPositionLayers) {
+      layer.movePosition(x, y);
+    }
   }
   addAboveLayer(layer) {
     this.aboveLayers.push(layer);
@@ -491,6 +563,60 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   }
   removeBelowLayer(layer) {
     this.belowLayers = this.belowLayers.filter(l => l !== layer);
+  }
+  getNextLayer() {
+    return this.layerChain.next;
+  }
+  getLastLayer() {
+    return this.layerChain.last;
+  }
+  getStartLayer() {
+    let startLayer = this;
+    while (startLayer.layerChain.last) {
+      startLayer = startLayer.layerChain.last;
+    }
+    return startLayer;
+  }
+  getEndLayer() {
+    let endLayer = this;
+    while (endLayer.layerChain.next) {
+      endLayer = endLayer.layerChain.next;
+    }
+    return endLayer;
+  }
+  insertNextLayer(layer) {
+    if (this.layerChain.next) {
+      this.layerChain.next.layerChain.last = layer;
+      layer.layerChain.next = this.layerChain.next;
+    }
+    this.layerChain.next = layer;
+    layer.layerChain.last = this;
+  }
+  insertLastLayer(layer) {
+    if (this.layerChain.last) {
+      this.layerChain.last.layerChain.next = layer;
+      layer.layerChain.last = this.layerChain.last;
+    }
+    this.layerChain.last = layer;
+    layer.layerChain.next = this;
+  }
+  deleteNextLayer() {
+    if (this.layerChain.next) {
+      const nextLayer = this.layerChain.next;
+      this.layerChain.next = this.layerChain.next.layerChain.next;
+      this.layerChain.next.layerChain.last = this;
+      nextLayer.layerChain.next = null;
+      nextLayer.layerChain.last = null;
+    }
+  }
+  deleteLastLayer() {
+    if (this.layerChain.last) {
+      const lastLayer = this.layerChain.last;
+      this.layerChain.last = this.layerChain.last.layerChain.last;
+      this.layerChain.last.layerChain.next = this;
+      lastLayer.layerChain.next = null;
+      lastLayer.layerChain.last = null;
+    }
   }
   getTopLayers() {
     let topLayers = [];
@@ -507,20 +633,89 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return topLayers;
   }
+  outputToCanvasFromCanvas(srcCanvas,destCanvas) {
+    const crect = srcCanvas.getRect();
+    if (destCanvas instanceof parent.Canvas) {
+      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,this.position.x,this.position.y);
+    }else if (destCanvas instanceof HTMLCanvasElement){
+      const context = destCanvas.getContext('2d');
+      context.globalAlpha = srcCanvas.globalAlpha;
+      context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
+      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,this.position.x,this.position.y,crect.w,crect.h);
+    }else{
+      // DO NOTHING
+    }
+  }
   outputToCanvas(canvas) {
+    this.outputToCanvasFromCanvas(this.canvas,canvas);
   }
   outputBelowLayers(canvas) {
+    const crect = this.canvas.getRect();
+    const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
     for (let layer of this.belowLayers) {
       if (layer instanceof BaseLayer) {
-        layer.outputToCanvas(canvas);
+        layer.outputCurrentLayer(tcanvas);
       } else {
         // DO NOTHING
       }
     }
+    this.outputToCanvasFromCanvas(tcanvas,canvas);
   }
-  outputCurrentLayer(canvas) {
+  clearCanvas(canvas, opt) {
+    if (!opt) {
+      opt = {};
+    }
+    if (opt.clearCanvas) {
+      let color = [255,255,255,0];
+      if (opt.clearColor) {
+        color = parent.Color.colorToArray(opt.clearColor);
+      }
+      if (canvas instanceof parent.Canvas) {
+        canvas.fill([255,255,255,0]);
+      }else if (canvas instanceof HTMLCanvasElement){
+        const colorAry = parent.Color.colorToArray([255,255,255,0]);
+        const context = canvas.getContext('2d');
+        const contextimg = context.getImageData(0,0,canvas.width,canvas.height);
+        for(let i = 0; i < contextimg.data.length; i += 4){
+          contextimg.data[i] = colorAry[0];
+          contextimg.data[i + 1] = colorAry[1];
+          contextimg.data[i + 2] = colorAry[2];
+          contextimg.data[i + 3] = colorAry[3];
+        }
+        context.putImageData(contextimg,0,0);
+      }else{
+        // DO NOTHING
+      }
+    }
+  }
+  outputCurrentLayer(canvas, opt) {
+    if (!opt) {
+      opt = {};
+    }
+    if (opt.clearCanvas) {
+      let color = [255,255,255,0];
+      if (opt.clearColor) {
+        color = parent.Color.colorToArray(opt.clearColor);
+      }
+      this.clearCanvas(canvas, opt);
+    }
     this.outputBelowLayers(canvas);
     this.outputToCanvas(canvas);
+    if (this.layerChain.next) {
+      this.layerChain.next.outputCurrentLayer(canvas);
+    }
+  }
+  outputCurrentFullLayres(canvas,opt) {
+    this.getStartLayer().outputCurrentLayer(canvas,opt);
+  }
+  outputFullLayres(canvas) {
+    const topLayers = this.getTopLayers();
+    for (let layer of topLayers) {
+      layer.outputCurrentFullLayres(canvas);
+    }
+  }
+  getCanvas() {
+    return this.canvas;
   }
 }
 
@@ -591,7 +786,7 @@ const Canvas = self.Canvas = class Canvas {
     this.resizeType = Canvas.ResizeType.TopLeft;
     this.scalingType = Canvas.ScalingType.Smoothing;
   }
-  getRawCanvas(canvas){
+  static getRawCanvas(canvas){
     if (canvas instanceof Canvas){
       canvas = canvas.raw;
     }else if (canvas instanceof HTMLCanvasElement){
@@ -602,7 +797,7 @@ const Canvas = self.Canvas = class Canvas {
     return canvas;
   }
   rcopyRect(destCanvas,w,h,sx,sy,dx,dy){
-    destCanvas = this.getRawCanvas(destCanvas);
+    destCanvas = Canvas.getRawCanvas(destCanvas);
     if (destCanvas === null){
       return false;
     }
@@ -633,7 +828,7 @@ const Canvas = self.Canvas = class Canvas {
     this.rcopyRect(destCanvas);
   }
   copyRect(srcCanvas,w,h,sx,sy,dx,dy){
-    srcCanvas = this.getRawCanvas(srcCanvas);
+    srcCanvas = Canvas.getRawCanvas(srcCanvas);
     if (srcCanvas === null){
       return false;
     }
@@ -691,7 +886,7 @@ const Canvas = self.Canvas = class Canvas {
     this.fillRect(0,0,this.raw.width,this.raw.height,color);
   }
   drawRect(canvas,sx,sy,sw,sh,dx,dy,dw,dh){
-    canvas = this.getRawCanvas(canvas);
+    canvas = Canvas.getRawCanvas(canvas);
     if (canvas === null){
       return false;
     }
@@ -732,17 +927,17 @@ const Canvas = self.Canvas = class Canvas {
     return {
       x: 0,
       y: 0,
-      w: this.raw.w,
-      h: this.raw.h,
+      w: this.raw.width,
+      h: this.raw.height,
     };
   }
   setResizeType(type){
     this.resizeType = type;
   }
-  getCanvas(){
+  getHTMLCanvas(){
     return this.raw;
   }
-  getContext(){
+  getHTMLCanvasContext(){
     return this.raw.getContext('2d');
   }
   getCopiedCanvas(){
@@ -2933,53 +3128,6 @@ Object.assign(app.modules.browser,self);
 return self;
 }).call({},self);
 
-app.modules.canvasMethod = {};
-
-const module_canvasMethod = self.module_canvasMethod = (function(){
-  const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
-  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
-  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
-  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".canvasMethod";
-// ================================================
-// module: canvasMethod , from: copy.js
-// ================================================
-const copy = self.copy = function copy(canvas, opt) {
-  const option = {
-    
-  };
-}
-
-// ================================================
-// module: canvasMethod , from: fillClearPattern.js
-// ================================================
-const fillClearPattern = self.fillClearPattern = function fillClearPattern(canvas, opt) {
-  const context = canvas.getContext('2d');
-  // fill white
-  context.fillStyle = 'rgba(255, 255, 255, 1)';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  const len = 32;
-  for(let x=0;x<canvas.width;x+=len){
-    for(let y=0;y<canvas.height;y+=len){
-      // clear pattern
-      context.fillStyle = 'rgba(224, 224, 224, 1)';
-      context.beginPath();
-      context.moveTo(x+len/2,y);
-      context.lineTo(x+len,y+len/2);
-      context.lineTo(x+len/2,y+len);
-      context.lineTo(x,y+len/2);
-      context.closePath();
-      context.fill();
-    }
-  }
-}
-
-
-Object.assign(app.modules.canvasMethod,self);
-
-return self;
-}).call({},self);
-
 // ================================================
 // source: Main.js
 // ================================================
@@ -3013,56 +3161,29 @@ const Main = self.Main = class Main {
     };
     this.targetObj.appendChild(this.baseCanvas);
 
-    this.viewerLayer = new modules.browser.Layer(this);
-    this.viewerLayer.setHistoryMax(0);
-    this.viewerLayer.setExternalColor(this.defaultLayer.externalColor);
-    this.viewerLayer.setCanvasSize(0,0);
-    this.viewerLayer.addParentLayer(this.baseCanvas);
+    this.viewerLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
 
-    this.clearpatternLayer = new modules.browser.Layer(this);
-    this.clearpatternLayer.setHistoryMax(0);
-    this.clearpatternLayer.addParentLayer(this.viewerLayer);
-    this.viewerLayer.addChildLayer(this.clearpatternLayer);
-    //this.clearpatternLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
-    //this.viewerLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
+    this.clearpatternLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.clearpatternLayer.insertLastLayer(this.viewerLayer);
 
-    this.baseLayer = new modules.browser.Layer(this);
-    this.baseLayer.setHistoryMax(0);
-    this.baseLayer.addParentLayer(this.viewerLayer);
-    this.viewerLayer.addChildLayer(this.baseLayer);
-    this.baseLayer.addLinkedLayer(this.viewerLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
-    this.viewerLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.CanvasSize);
-    this.baseLayer.addLinkedLayer(this.clearpatternLayer,modules.browser.Layer.LinkedLayerType.Move);
-    this.clearpatternLayer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
+    this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.baseLayer.insertLastLayer(this.clearpatternLayer);
+    this.baseLayer.addSyncPositionLayer(this.clearpatternLayer);
 
-    this.layer = new modules.browser.Layer(this);
-    this.baseLayer.addChildLayer(this.layer);
-    this.layer.addParentLayer(this.baseLayer);
-    this.baseLayer.addLinkedLayer(this.layer,modules.browser.Layer.LinkedLayerType.Move);
-    this.layer.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
+    this.layer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.baseLayer.addBelowLayer(this.layer);
+    this.layer2 = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.baseLayer.addBelowLayer(this.layer2);
 
-    this.layer2 = new modules.browser.Layer(this);
-    this.baseLayer.addChildLayer(this.layer2);
-    this.layer2.addParentLayer(this.baseLayer);
-    this.baseLayer.addLinkedLayer(this.layer2,modules.browser.Layer.LinkedLayerType.Move);
-    this.layer2.addLinkedLayer(this.baseLayer,modules.browser.Layer.LinkedLayerType.Move);
-
-    this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
-    this.viewerLayer.doWrite();
+    modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer.canvas);
+    this.viewerLayer.outputCurrentLayer(this.baseCanvas);
     this.window.addEventListener("DOMContentLoaded", () =>{
       const ovserver = new ResizeObserver(() => {
         this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
         this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
-        this.viewerLayer.setCanvasSize(this.baseCanvas.width, this.baseCanvas.height);
-        this.viewerLayer.setOutputPos(0,0);
-        this.viewerLayer.setOutputSize(0,0);
-        const cacheRect = this.viewerLayer.calcCacheRect();
-        this.viewerLayer.setCanvasSize(0,0);
-        this.viewerLayer.setOutputPos(cacheRect.x,cacheRect.y);
-        this.viewerLayer.setOutputSize(cacheRect.w,cacheRect.h);
-        //this.viewerLayer.setOutputSize(this.baseCanvas.width, this.baseCanvas.height);
-        this.clearpatternLayer.doMethod(modules.canvasMethod.fillClearPattern,null);
-        this.viewerLayer.doWrite();
+        this.viewerLayer.getCanvas().resize(this.baseCanvas.width, this.baseCanvas.height);
+        modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer.canvas);
+        this.viewerLayer.outputCurrentLayer(this.baseCanvas);
       });
       ovserver.observe(this.targetObj);
     });

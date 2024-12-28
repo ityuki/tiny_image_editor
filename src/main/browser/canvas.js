@@ -57,7 +57,7 @@ const Canvas = self.Canvas = class Canvas {
     this.resizeType = Canvas.ResizeType.TopLeft;
     this.scalingType = Canvas.ScalingType.Smoothing;
   }
-  getRawCanvas(canvas){
+  static getRawCanvas(canvas){
     if (canvas instanceof Canvas){
       canvas = canvas.raw;
     }else if (canvas instanceof HTMLCanvasElement){
@@ -68,7 +68,7 @@ const Canvas = self.Canvas = class Canvas {
     return canvas;
   }
   rcopyRect(destCanvas,w,h,sx,sy,dx,dy){
-    destCanvas = this.getRawCanvas(destCanvas);
+    destCanvas = Canvas.getRawCanvas(destCanvas);
     if (destCanvas === null){
       return false;
     }
@@ -99,7 +99,7 @@ const Canvas = self.Canvas = class Canvas {
     this.rcopyRect(destCanvas);
   }
   copyRect(srcCanvas,w,h,sx,sy,dx,dy){
-    srcCanvas = this.getRawCanvas(srcCanvas);
+    srcCanvas = Canvas.getRawCanvas(srcCanvas);
     if (srcCanvas === null){
       return false;
     }
@@ -157,7 +157,7 @@ const Canvas = self.Canvas = class Canvas {
     this.fillRect(0,0,this.raw.width,this.raw.height,color);
   }
   drawRect(canvas,sx,sy,sw,sh,dx,dy,dw,dh){
-    canvas = this.getRawCanvas(canvas);
+    canvas = Canvas.getRawCanvas(canvas);
     if (canvas === null){
       return false;
     }
@@ -198,17 +198,17 @@ const Canvas = self.Canvas = class Canvas {
     return {
       x: 0,
       y: 0,
-      w: this.raw.w,
-      h: this.raw.h,
+      w: this.raw.width,
+      h: this.raw.height,
     };
   }
   setResizeType(type){
     this.resizeType = type;
   }
-  getCanvas(){
+  getHTMLCanvas(){
     return this.raw;
   }
-  getContext(){
+  getHTMLCanvasContext(){
     return this.raw.getContext('2d');
   }
   getCopiedCanvas(){
