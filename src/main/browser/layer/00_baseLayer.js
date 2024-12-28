@@ -11,7 +11,9 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       next: null,
     }
     this.position = { x: 0, y: 0 };
+    this.angle = 0;
     this.canvas = new parent.Canvas(main,width,height);
+    this.visible = true;
     this.syncPositionLayers = [];
   }
   addSyncPositionLayer(layer) {
@@ -33,6 +35,21 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     for (let layer of this.syncPositionLayers) {
       layer.movePosition(x, y);
     }
+  }
+  setAngle(angle) {
+    this.angle = angle % 360;
+  }
+  getAngle() {
+    return this.angle;
+  }
+  getPosition() {
+    return structuredClone(this.position);
+  }
+  setVisible(visible) {
+    this.visible = visible;
+  }
+  getVisible() {
+    return this.visible;
   }
   addAboveLayer(layer) {
     this.aboveLayers.push(layer);
@@ -115,33 +132,39 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,opt) {
+    if (!opt) {
+      opt = {};
+    }
     const crect = srcCanvas.getRect();
+    let diffPos = this.getPosition();
+    if (opt.nonDiffPos === true) {
+      diffPos = { x: 0, y: 0 };
+    }
     if (destCanvas instanceof parent.Canvas) {
-      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,this.position.x,this.position.y);
+      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,diffPos.x,diffPos.y);
     }else if (destCanvas instanceof HTMLCanvasElement){
       const context = destCanvas.getContext('2d');
+      context.save();
       context.globalAlpha = srcCanvas.globalAlpha;
       context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
-      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,this.position.x,this.position.y,crect.w,crect.h);
+      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,diffPos.x,diffPos.y,crect.w,crect.h);
+      context.restore();
     }else{
       // DO NOTHING
     }
   }
-  outputToCanvas(canvas) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas);
+  outputToCanvas(canvas,opt) {
+    this.outputToCanvasFromCanvas(this.canvas,canvas,opt);
   }
-  outputBelowLayers(canvas) {
-    const crect = this.canvas.getRect();
-    const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+  outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
       if (layer instanceof BaseLayer) {
-        layer.outputCurrentLayer(tcanvas);
+        layer.outputCurrentLayer(canvas,opt);
       } else {
         // DO NOTHING
       }
     }
-    this.outputToCanvasFromCanvas(tcanvas,canvas);
   }
   clearCanvas(canvas, opt) {
     if (!opt) {
@@ -153,9 +176,9 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         color = parent.Color.colorToArray(opt.clearColor);
       }
       if (canvas instanceof parent.Canvas) {
-        canvas.fill([255,255,255,0]);
+        canvas.fill(color);
       }else if (canvas instanceof HTMLCanvasElement){
-        const colorAry = parent.Color.colorToArray([255,255,255,0]);
+        const colorAry = parent.Color.colorToArray(color);
         const context = canvas.getContext('2d');
         const contextimg = context.getImageData(0,0,canvas.width,canvas.height);
         for(let i = 0; i < contextimg.data.length; i += 4){
@@ -181,8 +204,22 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
       this.clearCanvas(canvas, opt);
     }
-    this.outputBelowLayers(canvas);
-    this.outputToCanvas(canvas);
+    if (this.visible === true) {
+      let crect = {
+        x:0,y:0,w:0,h:0
+      };
+      if (canvas instanceof parent.Canvas) {
+        crect = canvas.getRect();
+      }else if (canvas instanceof HTMLCanvasElement){
+        crect.w = canvas.width;
+        crect.h = canvas.height;
+      }
+      const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+      this.outputBelowLayers(tcanvas,{nonDiffPos: true});
+      this.outputToCanvas(tcanvas,{nonDiffPos: true});
+      tcanvas.rotateAutosize(this.angle,{once: true});
+      this.outputToCanvasFromCanvas(tcanvas,canvas);
+    }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
     }

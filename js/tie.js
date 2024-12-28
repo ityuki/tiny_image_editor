@@ -529,7 +529,9 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       next: null,
     }
     this.position = { x: 0, y: 0 };
+    this.angle = 0;
     this.canvas = new parent.Canvas(main,width,height);
+    this.visible = true;
     this.syncPositionLayers = [];
   }
   addSyncPositionLayer(layer) {
@@ -551,6 +553,21 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     for (let layer of this.syncPositionLayers) {
       layer.movePosition(x, y);
     }
+  }
+  setAngle(angle) {
+    this.angle = angle % 360;
+  }
+  getAngle() {
+    return this.angle;
+  }
+  getPosition() {
+    return structuredClone(this.position);
+  }
+  setVisible(visible) {
+    this.visible = visible;
+  }
+  getVisible() {
+    return this.visible;
   }
   addAboveLayer(layer) {
     this.aboveLayers.push(layer);
@@ -633,33 +650,39 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,opt) {
+    if (!opt) {
+      opt = {};
+    }
     const crect = srcCanvas.getRect();
+    let diffPos = this.getPosition();
+    if (opt.nonDiffPos === true) {
+      diffPos = { x: 0, y: 0 };
+    }
     if (destCanvas instanceof parent.Canvas) {
-      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,this.position.x,this.position.y);
+      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,diffPos.x,diffPos.y);
     }else if (destCanvas instanceof HTMLCanvasElement){
       const context = destCanvas.getContext('2d');
+      context.save();
       context.globalAlpha = srcCanvas.globalAlpha;
       context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
-      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,this.position.x,this.position.y,crect.w,crect.h);
+      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,diffPos.x,diffPos.y,crect.w,crect.h);
+      context.restore();
     }else{
       // DO NOTHING
     }
   }
-  outputToCanvas(canvas) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas);
+  outputToCanvas(canvas,opt) {
+    this.outputToCanvasFromCanvas(this.canvas,canvas,opt);
   }
-  outputBelowLayers(canvas) {
-    const crect = this.canvas.getRect();
-    const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+  outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
       if (layer instanceof BaseLayer) {
-        layer.outputCurrentLayer(tcanvas);
+        layer.outputCurrentLayer(canvas,opt);
       } else {
         // DO NOTHING
       }
     }
-    this.outputToCanvasFromCanvas(tcanvas,canvas);
   }
   clearCanvas(canvas, opt) {
     if (!opt) {
@@ -671,9 +694,9 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         color = parent.Color.colorToArray(opt.clearColor);
       }
       if (canvas instanceof parent.Canvas) {
-        canvas.fill([255,255,255,0]);
+        canvas.fill(color);
       }else if (canvas instanceof HTMLCanvasElement){
-        const colorAry = parent.Color.colorToArray([255,255,255,0]);
+        const colorAry = parent.Color.colorToArray(color);
         const context = canvas.getContext('2d');
         const contextimg = context.getImageData(0,0,canvas.width,canvas.height);
         for(let i = 0; i < contextimg.data.length; i += 4){
@@ -699,8 +722,22 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
       this.clearCanvas(canvas, opt);
     }
-    this.outputBelowLayers(canvas);
-    this.outputToCanvas(canvas);
+    if (this.visible === true) {
+      let crect = {
+        x:0,y:0,w:0,h:0
+      };
+      if (canvas instanceof parent.Canvas) {
+        crect = canvas.getRect();
+      }else if (canvas instanceof HTMLCanvasElement){
+        crect.w = canvas.width;
+        crect.h = canvas.height;
+      }
+      const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+      this.outputBelowLayers(tcanvas,{nonDiffPos: true});
+      this.outputToCanvas(tcanvas,{nonDiffPos: true});
+      tcanvas.rotateAutosize(this.angle,{once: true});
+      this.outputToCanvasFromCanvas(tcanvas,canvas);
+    }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
     }
@@ -915,9 +952,11 @@ const Canvas = self.Canvas = class Canvas {
       dh = sh;
     }
     const scontext = this.raw.getContext('2d');
+    scontext.save();
     scontext.globalAlpha = this.drawAlpha;
     scontext.globalCompositeOperation = this.drawOverlapType;
     scontext.drawImage(canvas,sx,sy,sw,sh,dx,dy,dw,dh);
+    scontext.restore();
     return true;
   }
   draw(canvas,dx,dy){
@@ -1001,15 +1040,19 @@ const Canvas = self.Canvas = class Canvas {
       return (y * cv.width + x) * 4;
     }
     if (this.scalingType === Canvas.ScalingType.None){
+      context.save();
       context.imageSmoothingEnabled = false;
       context.globalAlpha = 1;
       context.globalCompositeOperation = Canvas.OverlapType.SourceOver;
       context.drawImage(tcanvas,0,0,tcanvas.width,tcanvas.height,0,0,this.raw.width,this.raw.height);
+      context.restore();
     }else if (this.scalingType === Canvas.ScalingType.Smoothing){
+      context.save();
       context.imageSmoothingEnabled = true;
       context.globalAlpha = 1;
       context.globalCompositeOperation = Canvas.OverlapType.SourceOver;
       context.drawImage(tcanvas,0,0,tcanvas.width,tcanvas.height,0,0,this.raw.width,this.raw.height);
+      context.restore();
     }else if (this.scalingType === Canvas.ScalingType.Nearest){
       for(let y = 0; y < this.raw.height; y++){
         for(let x = 0; x < this.raw.width; x++){
@@ -1218,28 +1261,36 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
+    context.save();
     context.translate(centerX,centerY);
     context.rotate(angle * Math.PI / 180);
     context.drawImage(tcanvas,-centerX,-centerY);
+    context.restore();
   }
   rotateCenter(angle){
     return this.rotate(this.raw.width / 2,this.raw.height / 2,angle);
   }
-  rotateAutosize(angle){
+  rotateAutosize(angle,opt){
     angle = angle % 360;
     if (angle === 0){
       return;
     }
+    if (!opt){
+      opt = {};
+    }
     const tcanvas = this.getCopiedCanvas();
-    if (angle === 180){
+    const once = opt.once || false;
+    if (!once && angle === 180){
       this.raw.width = tcanvas.width;
       this.raw.height = tcanvas.height;
       const context = this.raw.getContext('2d');
+      context.save();
       context.scale(-1,-1);
       context.drawImage(tcanvas,-tcanvas.width,-tcanvas.height);
+      context.restore();
       return;
     }
-    if (angle === 90 || angle === 270){
+    if (!once && (angle === 90 || angle === 270)){
       this.raw.width = tcanvas.height;
       this.raw.height = tcanvas.width;
       const context = this.raw.getContext('2d');
@@ -1271,9 +1322,11 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.height = tcanvas.height*2;
     this.fill([255,255,255,0]);
     const context = this.raw.getContext('2d');
+    context.save();
     context.translate(tcanvas.width,tcanvas.height);
     context.rotate(angle * Math.PI / 180);
     context.drawImage(tcanvas,-tcanvas.width / 2,-tcanvas.height / 2);
+    context.restore();
     this.fit();
   }
   flipHorizontal(){
@@ -1281,16 +1334,20 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
+    context.save();
     context.scale(-1,1);
     context.drawImage(tcanvas,-tcanvas.width,0);
+    context.restore();
   }
   flipVertical(){
     const tcanvas = this.getCopiedCanvas();
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
+    context.save();
     context.scale(1,-1);
     context.drawImage(tcanvas,0,-tcanvas.height);
+    context.restore();
   }
   colorFilter(filter){
     const context = this.raw.getContext('2d');
@@ -1388,9 +1445,11 @@ const Canvas = self.Canvas = class Canvas {
           const context = this.raw.getContext('2d');
           this.raw.width = img.width;
           this.raw.height = img.height;
+          context.save();
           context.globalAlpha = 1;
           context.globalCompositeOperation = Canvas.OverlapType.Copy;
           context.drawImage(img,0,0);
+          context.restore();
         };
         img.onerror = () => {
           alert('ERROR\nnot image file')
