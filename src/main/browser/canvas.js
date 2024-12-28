@@ -55,7 +55,7 @@ const Canvas = self.Canvas = class Canvas {
     this.drawOverlapType = Canvas.OverlapType.SourceOver;
     this.drawAlpha = 1;
     this.resizeType = Canvas.ResizeType.TopLeft;
-    this.scalingType = Canvas.ScalingType.None;
+    this.scalingType = Canvas.ScalingType.Smoothing;
   }
   getRawCanvas(canvas){
     if (canvas instanceof Canvas){
@@ -186,10 +186,9 @@ const Canvas = self.Canvas = class Canvas {
       dh = sh;
     }
     const scontext = this.raw.getContext('2d');
-    const dcontext = canvas.getContext('2d');
     scontext.globalAlpha = this.drawAlpha;
     scontext.globalCompositeOperation = this.drawOverlapType;
-    scontext.drawImage(dcontext,sx,sy,sw,sh,dx,dy,dw,dh);
+    scontext.drawImage(canvas,sx,sy,sw,sh,dx,dy,dw,dh);
     return true;
   }
   draw(canvas,dx,dy){
@@ -393,6 +392,139 @@ const Canvas = self.Canvas = class Canvas {
   }
   rateScaling(rate){
     return this.scaling(this.raw.width * rate,this.raw.height * rate);
+  }
+  move(x,y){
+    if (x === 0 && y === 0){
+      return true;
+    }
+    if (this.raw.width + x <= 0 || this.raw.height + y <= 0){
+      this.raw.width = 1;
+      this.raw.height = 1;
+      this.fill([255,255,255,0]);
+      return true;
+    }
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width+x;
+    this.raw.height = tcanvas.height+y;
+    this.copyRect(tcanvas,tcanvas.width,tcanvas.height,0,0,x,y);
+  }
+  rotate(centerX,centerY,angle){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.translate(centerX,centerY);
+    context.rotate(angle * Math.PI / 180);
+    context.drawImage(tcanvas,-centerX,-centerY);
+  }
+  rotateCenter(angle){
+    return this.rotate(this.raw.width / 2,this.raw.height / 2,angle);
+  }
+  flipHorizontal(){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.scale(-1,1);
+    context.drawImage(tcanvas,-tcanvas.width,0);
+  }
+  flipVertical(){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.scale(1,-1);
+    context.drawImage(tcanvas,0,-tcanvas.height);
+  }
+  colorFilter(filter){
+    const context = this.raw.getContext('2d');
+    const img = context.getImageData(0,0,this.raw.width,this.raw.height);
+    for(let i = 0; i < img.data.length; i += 4){
+      const color = filter([img.data[i],img.data[i + 1],img.data[i + 2],img.data[i + 3]]);
+      img.data[i] = color[0];
+      img.data[i + 1] = color[1];
+      img.data[i + 2] = color[2];
+      img.data[i + 3] = color[3];
+    }
+    context.putImageData(img,0,0);
+  }
+  colorFilterGray(){
+    this.colorFilter((color) => {
+      const gray = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2];
+      return [gray,gray,gray,color[3]];
+    });
+  }
+  colorFilterSepia(){
+    this.colorFilter((color) => {
+      const r = 0.393 * color[0] + 0.769 * color[1] + 0.189 * color[2];
+      const g = 0.349 * color[0] + 0.686 * color[1] + 0.168 * color[2];
+      const b = 0.272 * color[0] + 0.534 * color[1] + 0.131 * color[2];
+      return [r,g,b,color[3]];
+    });
+  }
+  getBlurHash(){
+    const canvas = this.main.window.document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    canvas.width = Math.round(this.raw.width * scale);
+    canvas.height = Math.round(this.raw.height * scale);
+    context.drawImage(this.raw, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    return self.vendor.blurhash.encode(pixels.data,pixels.width,pixels.height,4,3);
+  }
+  setBlurHash(hash){
+    const w = this.raw.width;
+    const h = this.raw.height;
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    this.raw.width = Math.round(this.raw.width * scale);
+    this.raw.height = Math.round(this.raw.height * scale);
+    const imgd = self.vendor.blurhash.decode(hash,this.raw.width,this.raw.height,1);
+    const context = this.raw.getContext('2d');
+    const pixels = context.getImageData(0, 0, this.raw.width, this.raw.height);
+    for(let i = 0; i < imgd.length; i ++){
+      pixels.data[i] = imgd[i];
+    }
+    context.putImageData(pixels,0,0);
+    this.scaling(w,h);
+  }
+  getThumbHash(){
+    const canvas = this.main.window.document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    canvas.width = Math.round(this.raw.width * scale);
+    canvas.height = Math.round(this.raw.height * scale);
+    context.drawImage(this.raw, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const binaryThumbHash = self.vendor.ThumbHash.rgbaToThumbHash(pixels.width, pixels.height, pixels.data);
+    const binaryToBase64 = binary => btoa(String.fromCharCode(...binary))
+    return binaryToBase64(binaryThumbHash);
+  }
+  setThumbHash(hash){
+    const w = this.raw.width;
+    const h = this.raw.height;
+    const base64ToBinary = base64 => new Uint8Array(atob(base64).split('').map(x => x.charCodeAt(0)))
+    const imgd = self.vendor.ThumbHash.thumbHashToRGBA(base64ToBinary(hash));
+    this.raw.width = imgd.w;
+    this.raw.height = imgd.h;
+    const context = this.raw.getContext('2d');
+    const pixels = context.getImageData(0, 0, this.raw.width, this.raw.height);
+    for(let i = 0; i < imgd.rgba.length; i ++){
+      pixels.data[i] = imgd.rgba[i];
+    }
+    context.putImageData(pixels, 0, 0);
+    this.scaling(w,h);
   }
   loadLocalImage(){
     const input = this.main.window.document.createElement('input');

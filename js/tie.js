@@ -6,6 +6,8 @@ const Tie = (function(){
   const $tie = app.$tie = app;
 
   const self = this;
+  const parent = self.parent = null;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID;
 // ================================================
@@ -19,6 +21,8 @@ app.modules.utils = {};
 
 const module_utils = self.module_utils = (function(){
   const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils";
 // ================================================
@@ -175,12 +179,16 @@ app.modules.utils.vendor = {};
 
 const vendor = self.vendor = (function(){
   const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils.vendor";
 app.modules.utils.vendor.fonts = {};
 
 const fonts = self.fonts = (function(){
   const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils.vendor.fonts";
 // ================================================
@@ -446,8 +454,81 @@ app.modules.browser = {};
 
 const module_browser = self.module_browser = (function(){
   const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser";
+app.modules.browser.layer = {};
+
+const layer = self.layer = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.layer";
+// ================================================
+// module: browser.layer , from: 00_baseLayer.js
+// ================================================
+const BaseLayer = self.BaseLayer = class BaseLayer {
+  static currentLayerId = 0;
+  constructor(main) {
+    BaseLayer.currentLayerId++;
+    this.id = BaseLayer.currentLayerId;
+    this.main = main;
+    this.aboveLayers = [];
+    this.belowLayers = [];
+    this.position = { x: 0, y: 0 };
+    this.size = { width: 0, height: 0 };
+  }
+  addAboveLayer(layer) {
+    this.aboveLayers.push(layer);
+  }
+  addBelowLayer(layer) {
+    this.belowLayers.push(layer);
+  }
+  removeAboveLayer(layer) {
+    this.aboveLayers = this.aboveLayers.filter(l => l !== layer);
+  }
+  removeBelowLayer(layer) {
+    this.belowLayers = this.belowLayers.filter(l => l !== layer);
+  }
+  getTopLayers() {
+    let topLayers = [];
+    if (this.aboveLayers.length === 0) {
+      topLayers.push(this);
+      return topLayers;
+    }
+    for (let layer of this.aboveLayers) {
+      if (layer instanceof BaseLayer) {
+        topLayers = topLayers.concat(layer.getTopLayers());
+      } else {
+        // DO NOTHING
+      }
+    }
+    return topLayers;
+  }
+  outputToCanvas(canvas) {
+  }
+  outputBelowLayers(canvas) {
+    for (let layer of this.belowLayers) {
+      if (layer instanceof BaseLayer) {
+        layer.outputToCanvas(canvas);
+      } else {
+        // DO NOTHING
+      }
+    }
+  }
+  outputCurrentLayer(canvas) {
+    this.outputBelowLayers(canvas);
+    this.outputToCanvas(canvas);
+  }
+}
+
+
+Object.assign(app.modules.browser.layer,self);
+
+return self;
+}).call({},self);
 // ================================================
 // module: browser , from: canvas.js
 // ================================================
@@ -508,7 +589,7 @@ const Canvas = self.Canvas = class Canvas {
     this.drawOverlapType = Canvas.OverlapType.SourceOver;
     this.drawAlpha = 1;
     this.resizeType = Canvas.ResizeType.TopLeft;
-    this.scalingType = Canvas.ScalingType.None;
+    this.scalingType = Canvas.ScalingType.Smoothing;
   }
   getRawCanvas(canvas){
     if (canvas instanceof Canvas){
@@ -639,10 +720,9 @@ const Canvas = self.Canvas = class Canvas {
       dh = sh;
     }
     const scontext = this.raw.getContext('2d');
-    const dcontext = canvas.getContext('2d');
     scontext.globalAlpha = this.drawAlpha;
     scontext.globalCompositeOperation = this.drawOverlapType;
-    scontext.drawImage(dcontext,sx,sy,sw,sh,dx,dy,dw,dh);
+    scontext.drawImage(canvas,sx,sy,sw,sh,dx,dy,dw,dh);
     return true;
   }
   draw(canvas,dx,dy){
@@ -846,6 +926,139 @@ const Canvas = self.Canvas = class Canvas {
   }
   rateScaling(rate){
     return this.scaling(this.raw.width * rate,this.raw.height * rate);
+  }
+  move(x,y){
+    if (x === 0 && y === 0){
+      return true;
+    }
+    if (this.raw.width + x <= 0 || this.raw.height + y <= 0){
+      this.raw.width = 1;
+      this.raw.height = 1;
+      this.fill([255,255,255,0]);
+      return true;
+    }
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width+x;
+    this.raw.height = tcanvas.height+y;
+    this.copyRect(tcanvas,tcanvas.width,tcanvas.height,0,0,x,y);
+  }
+  rotate(centerX,centerY,angle){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.translate(centerX,centerY);
+    context.rotate(angle * Math.PI / 180);
+    context.drawImage(tcanvas,-centerX,-centerY);
+  }
+  rotateCenter(angle){
+    return this.rotate(this.raw.width / 2,this.raw.height / 2,angle);
+  }
+  flipHorizontal(){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.scale(-1,1);
+    context.drawImage(tcanvas,-tcanvas.width,0);
+  }
+  flipVertical(){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = tcanvas.width;
+    this.raw.height = tcanvas.height;
+    const context = this.raw.getContext('2d');
+    context.scale(1,-1);
+    context.drawImage(tcanvas,0,-tcanvas.height);
+  }
+  colorFilter(filter){
+    const context = this.raw.getContext('2d');
+    const img = context.getImageData(0,0,this.raw.width,this.raw.height);
+    for(let i = 0; i < img.data.length; i += 4){
+      const color = filter([img.data[i],img.data[i + 1],img.data[i + 2],img.data[i + 3]]);
+      img.data[i] = color[0];
+      img.data[i + 1] = color[1];
+      img.data[i + 2] = color[2];
+      img.data[i + 3] = color[3];
+    }
+    context.putImageData(img,0,0);
+  }
+  colorFilterGray(){
+    this.colorFilter((color) => {
+      const gray = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2];
+      return [gray,gray,gray,color[3]];
+    });
+  }
+  colorFilterSepia(){
+    this.colorFilter((color) => {
+      const r = 0.393 * color[0] + 0.769 * color[1] + 0.189 * color[2];
+      const g = 0.349 * color[0] + 0.686 * color[1] + 0.168 * color[2];
+      const b = 0.272 * color[0] + 0.534 * color[1] + 0.131 * color[2];
+      return [r,g,b,color[3]];
+    });
+  }
+  getBlurHash(){
+    const canvas = this.main.window.document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    canvas.width = Math.round(this.raw.width * scale);
+    canvas.height = Math.round(this.raw.height * scale);
+    context.drawImage(this.raw, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    return self.vendor.blurhash.encode(pixels.data,pixels.width,pixels.height,4,3);
+  }
+  setBlurHash(hash){
+    const w = this.raw.width;
+    const h = this.raw.height;
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    this.raw.width = Math.round(this.raw.width * scale);
+    this.raw.height = Math.round(this.raw.height * scale);
+    const imgd = self.vendor.blurhash.decode(hash,this.raw.width,this.raw.height,1);
+    const context = this.raw.getContext('2d');
+    const pixels = context.getImageData(0, 0, this.raw.width, this.raw.height);
+    for(let i = 0; i < imgd.length; i ++){
+      pixels.data[i] = imgd[i];
+    }
+    context.putImageData(pixels,0,0);
+    this.scaling(w,h);
+  }
+  getThumbHash(){
+    const canvas = this.main.window.document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const scale = 100 / Math.max(this.raw.width, this.raw.height);
+    canvas.width = Math.round(this.raw.width * scale);
+    canvas.height = Math.round(this.raw.height * scale);
+    context.drawImage(this.raw, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const binaryThumbHash = self.vendor.ThumbHash.rgbaToThumbHash(pixels.width, pixels.height, pixels.data);
+    const binaryToBase64 = binary => btoa(String.fromCharCode(...binary))
+    return binaryToBase64(binaryThumbHash);
+  }
+  setThumbHash(hash){
+    const w = this.raw.width;
+    const h = this.raw.height;
+    const base64ToBinary = base64 => new Uint8Array(atob(base64).split('').map(x => x.charCodeAt(0)))
+    const imgd = self.vendor.ThumbHash.thumbHashToRGBA(base64ToBinary(hash));
+    this.raw.width = imgd.w;
+    this.raw.height = imgd.h;
+    const context = this.raw.getContext('2d');
+    const pixels = context.getImageData(0, 0, this.raw.width, this.raw.height);
+    for(let i = 0; i < imgd.rgba.length; i ++){
+      pixels.data[i] = imgd.rgba[i];
+    }
+    context.putImageData(pixels, 0, 0);
+    this.scaling(w,h);
   }
   loadLocalImage(){
     const input = this.main.window.document.createElement('input');
@@ -1874,6 +2087,731 @@ const Storage = self.Storage = class Storage {
   }
 }
 
+app.modules.browser.vendor = {};
+
+const vendor = self.vendor = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor";
+app.modules.browser.vendor.blurhash = {};
+
+const blurhash = self.blurhash = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor.blurhash";
+// ================================================
+// module: browser.vendor.blurhash , from: base83.js
+// ================================================
+const digitCharacters = [
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "#",
+  "$",
+  "%",
+  "*",
+  "+",
+  ",",
+  "-",
+  ".",
+  ":",
+  ";",
+  "=",
+  "?",
+  "@",
+  "[",
+  "]",
+  "^",
+  "_",
+  "{",
+  "|",
+  "}",
+  "~",
+];
+
+const decode83 = (str) => {
+  let value = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    const digit = digitCharacters.indexOf(c);
+    value = value * 83 + digit;
+  }
+  return value;
+};
+
+const encode83 = (n, length) => {
+  var result = "";
+  for (let i = 1; i <= length; i++) {
+    let digit = (Math.floor(n) / Math.pow(83, length - i)) % 83;
+    result += digitCharacters[Math.floor(digit)];
+  }
+  return result;
+};
+
+// ================================================
+// module: browser.vendor.blurhash , from: decode.js
+// ================================================
+/**
+ * Returns an error message if invalid or undefined if valid
+ * @param blurhash
+ */
+const validateBlurhash = (blurhash) => {
+  if (!blurhash || blurhash.length < 6) {
+    throw new ValidationError(
+      "The blurhash string must be at least 6 characters"
+    );
+  }
+
+  const sizeFlag = decode83(blurhash[0]);
+  const numY = Math.floor(sizeFlag / 9) + 1;
+  const numX = (sizeFlag % 9) + 1;
+
+  if (blurhash.length !== 4 + 2 * numX * numY) {
+    throw new ValidationError(
+      `blurhash length mismatch: length is ${
+        blurhash.length
+      } but it should be ${4 + 2 * numX * numY}`
+    );
+  }
+};
+
+const isBlurhashValid = (
+  blurhash
+) => {
+  try {
+    validateBlurhash(blurhash);
+  } catch (error) {
+    return { result: false, errorReason: error.message };
+  }
+
+  return { result: true };
+};
+
+const decodeDC = (value) => {
+  const intR = value >> 16;
+  const intG = (value >> 8) & 255;
+  const intB = value & 255;
+  return [sRGBToLinear(intR), sRGBToLinear(intG), sRGBToLinear(intB)];
+};
+
+const decodeAC = (value, maximumValue) => {
+  const quantR = Math.floor(value / (19 * 19));
+  const quantG = Math.floor(value / 19) % 19;
+  const quantB = value % 19;
+
+  const rgb = [
+    signPow((quantR - 9) / 9, 2.0) * maximumValue,
+    signPow((quantG - 9) / 9, 2.0) * maximumValue,
+    signPow((quantB - 9) / 9, 2.0) * maximumValue,
+  ];
+
+  return rgb;
+};
+
+const decode = self.decode = (
+  blurhash,
+  width,
+  height,
+  punch
+) => {
+  validateBlurhash(blurhash);
+
+  punch = punch | 1;
+
+  const sizeFlag = decode83(blurhash[0]);
+  const numY = Math.floor(sizeFlag / 9) + 1;
+  const numX = (sizeFlag % 9) + 1;
+
+  const quantisedMaximumValue = decode83(blurhash[1]);
+  const maximumValue = (quantisedMaximumValue + 1) / 166;
+
+  const colors = new Array(numX * numY);
+
+  for (let i = 0; i < colors.length; i++) {
+    if (i === 0) {
+      const value = decode83(blurhash.substring(2, 6));
+      colors[i] = decodeDC(value);
+    } else {
+      const value = decode83(blurhash.substring(4 + i * 2, 6 + i * 2));
+      colors[i] = decodeAC(value, maximumValue * punch);
+    }
+  }
+
+  const bytesPerRow = width * 4;
+  const pixels = new Uint8ClampedArray(bytesPerRow * height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+
+      for (let j = 0; j < numY; j++) {
+        const basisY = Math.cos((Math.PI * y * j) / height);
+        for (let i = 0; i < numX; i++) {
+          const basis = Math.cos((Math.PI * x * i) / width) * basisY;
+          const color = colors[i + j * numX];
+          r += color[0] * basis;
+          g += color[1] * basis;
+          b += color[2] * basis;
+        }
+      }
+
+      let intR = linearTosRGB(r);
+      let intG = linearTosRGB(g);
+      let intB = linearTosRGB(b);
+
+      pixels[4 * x + 0 + y * bytesPerRow] = intR;
+      pixels[4 * x + 1 + y * bytesPerRow] = intG;
+      pixels[4 * x + 2 + y * bytesPerRow] = intB;
+      pixels[4 * x + 3 + y * bytesPerRow] = 255; // alpha
+    }
+  }
+  return pixels;
+};
+
+// ================================================
+// module: browser.vendor.blurhash , from: encode.js
+// ================================================
+const bytesPerPixel = 4;
+
+const multiplyBasisFunction = (
+  pixels,
+  width,
+  height,
+  basisFunction
+) => {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  const bytesPerRow = width * bytesPerPixel;
+
+  for (let x = 0; x < width; x++) {
+    const bytesPerPixelX = bytesPerPixel * x;
+
+    for (let y = 0; y < height; y++) {
+      const basePixelIndex = bytesPerPixelX + y * bytesPerRow;
+      const basis = basisFunction(x, y);
+      r +=
+        basis * sRGBToLinear(pixels[basePixelIndex]);
+      g +=
+        basis * sRGBToLinear(pixels[basePixelIndex + 1]);
+      b +=
+        basis * sRGBToLinear(pixels[basePixelIndex + 2]);
+    }
+  }
+
+  let scale = 1 / (width * height);
+
+  return [r * scale, g * scale, b * scale];
+};
+
+const encodeDC = (value) => {
+  const roundedR = linearTosRGB(value[0]);
+  const roundedG = linearTosRGB(value[1]);
+  const roundedB = linearTosRGB(value[2]);
+  return (roundedR << 16) + (roundedG << 8) + roundedB;
+};
+
+const encodeAC = (value, maximumValue) => {
+  let quantR = Math.floor(
+    Math.max(
+      0,
+      Math.min(18, Math.floor(signPow(value[0] / maximumValue, 0.5) * 9 + 9.5))
+    )
+  );
+  let quantG = Math.floor(
+    Math.max(
+      0,
+      Math.min(18, Math.floor(signPow(value[1] / maximumValue, 0.5) * 9 + 9.5))
+    )
+  );
+  let quantB = Math.floor(
+    Math.max(
+      0,
+      Math.min(18, Math.floor(signPow(value[2] / maximumValue, 0.5) * 9 + 9.5))
+    )
+  );
+
+  return quantR * 19 * 19 + quantG * 19 + quantB;
+};
+
+const encode = self.encode = (
+  pixels,
+  width,
+  height,
+  componentX,
+  componentY
+) => {
+  if (componentX < 1 || componentX > 9 || componentY < 1 || componentY > 9) {
+    throw new ValidationError("BlurHash must have between 1 and 9 components");
+  }
+  if (width * height * 4 !== pixels.length) {
+    throw new ValidationError("Width and height must match the pixels array");
+  }
+
+  let factors = [];
+  for (let y = 0; y < componentY; y++) {
+    for (let x = 0; x < componentX; x++) {
+      const normalisation = x == 0 && y == 0 ? 1 : 2;
+      const factor = multiplyBasisFunction(
+        pixels,
+        width,
+        height,
+        (i, j) =>
+          normalisation *
+          Math.cos((Math.PI * x * i) / width) *
+          Math.cos((Math.PI * y * j) / height)
+      );
+      factors.push(factor);
+    }
+  }
+
+  const dc = factors[0];
+  const ac = factors.slice(1);
+
+  let hash = "";
+
+  let sizeFlag = componentX - 1 + (componentY - 1) * 9;
+  hash += encode83(sizeFlag, 1);
+
+  let maximumValue;
+  if (ac.length > 0) {
+    let actualMaximumValue = Math.max(...ac.map((val) => Math.max(...val)));
+    let quantisedMaximumValue = Math.floor(
+      Math.max(0, Math.min(82, Math.floor(actualMaximumValue * 166 - 0.5)))
+    );
+    maximumValue = (quantisedMaximumValue + 1) / 166;
+    hash += encode83(quantisedMaximumValue, 1);
+  } else {
+    maximumValue = 1;
+    hash += encode83(0, 1);
+  }
+
+  hash += encode83(encodeDC(dc), 4);
+
+  ac.forEach((factor) => {
+    hash += encode83(encodeAC(factor, maximumValue), 2);
+  });
+
+  return hash;
+};
+
+// ================================================
+// module: browser.vendor.blurhash , from: error.js
+// ================================================
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ValidationError";
+    this.message = message;
+  }
+}
+
+// ================================================
+// module: browser.vendor.blurhash , from: util.js
+// ================================================
+const sRGBToLinear = (value) => {
+  let v = value / 255;
+  if (v <= 0.04045) {
+    return v / 12.92;
+  } else {
+    return Math.pow((v + 0.055) / 1.055, 2.4);
+  }
+};
+
+const linearTosRGB = (value) => {
+  let v = Math.max(0, Math.min(1, value));
+  if (v <= 0.0031308) {
+    return Math.trunc(v * 12.92 * 255 + 0.5);
+  } else {
+    return Math.trunc((1.055 * Math.pow(v, 1 / 2.4) - 0.055) * 255 + 0.5);
+  }
+};
+
+const sign = (n) => (n < 0 ? -1 : 1);
+
+const signPow = (val, exp) =>
+  sign(val) * Math.pow(Math.abs(val), exp);
+
+
+Object.assign(app.modules.browser.vendor.blurhash,self);
+
+return self;
+}).call({},self);
+app.modules.browser.vendor.ThumbHash = {};
+
+const ThumbHash = self.ThumbHash = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor.ThumbHash";
+// ================================================
+// module: browser.vendor.ThumbHash , from: thumbhash.js
+// ================================================
+/**
+ * Encodes an RGBA image to a ThumbHash. RGB should not be premultiplied by A.
+ *
+ * @param w The width of the input image. Must be ≤100px.
+ * @param h The height of the input image. Must be ≤100px.
+ * @param rgba The pixels in the input image, row-by-row. Must have w*h*4 elements.
+ * @returns The ThumbHash as a Uint8Array.
+ */
+const rgbaToThumbHash = self.rgbaToThumbHash = function rgbaToThumbHash(w, h, rgba) {
+  // Encoding an image larger than 100x100 is slow with no benefit
+  if (w > 100 || h > 100) throw new Error(`${w}x${h} doesn't fit in 100x100`)
+  let { PI, round, max, cos, abs } = Math
+
+  // Determine the average color
+  let avg_r = 0, avg_g = 0, avg_b = 0, avg_a = 0
+  for (let i = 0, j = 0; i < w * h; i++, j += 4) {
+    let alpha = rgba[j + 3] / 255
+    avg_r += alpha / 255 * rgba[j]
+    avg_g += alpha / 255 * rgba[j + 1]
+    avg_b += alpha / 255 * rgba[j + 2]
+    avg_a += alpha
+  }
+  if (avg_a) {
+    avg_r /= avg_a
+    avg_g /= avg_a
+    avg_b /= avg_a
+  }
+
+  let hasAlpha = avg_a < w * h
+  let l_limit = hasAlpha ? 5 : 7 // Use fewer luminance bits if there's alpha
+  let lx = max(1, round(l_limit * w / max(w, h)))
+  let ly = max(1, round(l_limit * h / max(w, h)))
+  let l = [] // luminance
+  let p = [] // yellow - blue
+  let q = [] // red - green
+  let a = [] // alpha
+
+  // Convert the image from RGBA to LPQA (composite atop the average color)
+  for (let i = 0, j = 0; i < w * h; i++, j += 4) {
+    let alpha = rgba[j + 3] / 255
+    let r = avg_r * (1 - alpha) + alpha / 255 * rgba[j]
+    let g = avg_g * (1 - alpha) + alpha / 255 * rgba[j + 1]
+    let b = avg_b * (1 - alpha) + alpha / 255 * rgba[j + 2]
+    l[i] = (r + g + b) / 3
+    p[i] = (r + g) / 2 - b
+    q[i] = r - g
+    a[i] = alpha
+  }
+
+  // Encode using the DCT into DC (constant) and normalized AC (varying) terms
+  let encodeChannel = (channel, nx, ny) => {
+    let dc = 0, ac = [], scale = 0, fx = []
+    for (let cy = 0; cy < ny; cy++) {
+      for (let cx = 0; cx * ny < nx * (ny - cy); cx++) {
+        let f = 0
+        for (let x = 0; x < w; x++)
+          fx[x] = cos(PI / w * cx * (x + 0.5))
+        for (let y = 0; y < h; y++)
+          for (let x = 0, fy = cos(PI / h * cy * (y + 0.5)); x < w; x++)
+            f += channel[x + y * w] * fx[x] * fy
+        f /= w * h
+        if (cx || cy) {
+          ac.push(f)
+          scale = max(scale, abs(f))
+        } else {
+          dc = f
+        }
+      }
+    }
+    if (scale)
+      for (let i = 0; i < ac.length; i++)
+        ac[i] = 0.5 + 0.5 / scale * ac[i]
+    return [dc, ac, scale]
+  }
+  let [l_dc, l_ac, l_scale] = encodeChannel(l, max(3, lx), max(3, ly))
+  let [p_dc, p_ac, p_scale] = encodeChannel(p, 3, 3)
+  let [q_dc, q_ac, q_scale] = encodeChannel(q, 3, 3)
+  let [a_dc, a_ac, a_scale] = hasAlpha ? encodeChannel(a, 5, 5) : []
+
+  // Write the constants
+  let isLandscape = w > h
+  let header24 = round(63 * l_dc) | (round(31.5 + 31.5 * p_dc) << 6) | (round(31.5 + 31.5 * q_dc) << 12) | (round(31 * l_scale) << 18) | (hasAlpha << 23)
+  let header16 = (isLandscape ? ly : lx) | (round(63 * p_scale) << 3) | (round(63 * q_scale) << 9) | (isLandscape << 15)
+  let hash = [header24 & 255, (header24 >> 8) & 255, header24 >> 16, header16 & 255, header16 >> 8]
+  let ac_start = hasAlpha ? 6 : 5
+  let ac_index = 0
+  if (hasAlpha) hash.push(round(15 * a_dc) | (round(15 * a_scale) << 4))
+
+  // Write the varying factors
+  for (let ac of hasAlpha ? [l_ac, p_ac, q_ac, a_ac] : [l_ac, p_ac, q_ac])
+    for (let f of ac)
+      hash[ac_start + (ac_index >> 1)] |= round(15 * f) << ((ac_index++ & 1) << 2)
+  return new Uint8Array(hash)
+}
+
+/**
+ * Decodes a ThumbHash to an RGBA image. RGB is not be premultiplied by A.
+ *
+ * @param hash The bytes of the ThumbHash.
+ * @returns The width, height, and pixels of the rendered placeholder image.
+ */
+const thumbHashToRGBA = self.thumbHashToRGBA = function thumbHashToRGBA(hash) {
+  let { PI, min, max, cos, round } = Math
+
+  // Read the constants
+  let header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16)
+  let header16 = hash[3] | (hash[4] << 8)
+  let l_dc = (header24 & 63) / 63
+  let p_dc = ((header24 >> 6) & 63) / 31.5 - 1
+  let q_dc = ((header24 >> 12) & 63) / 31.5 - 1
+  let l_scale = ((header24 >> 18) & 31) / 31
+  let hasAlpha = header24 >> 23
+  let p_scale = ((header16 >> 3) & 63) / 63
+  let q_scale = ((header16 >> 9) & 63) / 63
+  let isLandscape = header16 >> 15
+  let lx = max(3, isLandscape ? hasAlpha ? 5 : 7 : header16 & 7)
+  let ly = max(3, isLandscape ? header16 & 7 : hasAlpha ? 5 : 7)
+  let a_dc = hasAlpha ? (hash[5] & 15) / 15 : 1
+  let a_scale = (hash[5] >> 4) / 15
+
+  // Read the varying factors (boost saturation by 1.25x to compensate for quantization)
+  let ac_start = hasAlpha ? 6 : 5
+  let ac_index = 0
+  let decodeChannel = (nx, ny, scale) => {
+    let ac = []
+    for (let cy = 0; cy < ny; cy++)
+      for (let cx = cy ? 0 : 1; cx * ny < nx * (ny - cy); cx++)
+        ac.push((((hash[ac_start + (ac_index >> 1)] >> ((ac_index++ & 1) << 2)) & 15) / 7.5 - 1) * scale)
+    return ac
+  }
+  let l_ac = decodeChannel(lx, ly, l_scale)
+  let p_ac = decodeChannel(3, 3, p_scale * 1.25)
+  let q_ac = decodeChannel(3, 3, q_scale * 1.25)
+  let a_ac = hasAlpha && decodeChannel(5, 5, a_scale)
+
+  // Decode using the DCT into RGB
+  let ratio = thumbHashToApproximateAspectRatio(hash)
+  let w = round(ratio > 1 ? 32 : 32 * ratio)
+  let h = round(ratio > 1 ? 32 / ratio : 32)
+  let rgba = new Uint8Array(w * h * 4), fx = [], fy = []
+  for (let y = 0, i = 0; y < h; y++) {
+    for (let x = 0; x < w; x++, i += 4) {
+      let l = l_dc, p = p_dc, q = q_dc, a = a_dc
+
+      // Precompute the coefficients
+      for (let cx = 0, n = max(lx, hasAlpha ? 5 : 3); cx < n; cx++)
+        fx[cx] = cos(PI / w * (x + 0.5) * cx)
+      for (let cy = 0, n = max(ly, hasAlpha ? 5 : 3); cy < n; cy++)
+        fy[cy] = cos(PI / h * (y + 0.5) * cy)
+
+      // Decode L
+      for (let cy = 0, j = 0; cy < ly; cy++)
+        for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx * ly < lx * (ly - cy); cx++, j++)
+          l += l_ac[j] * fx[cx] * fy2
+
+      // Decode P and Q
+      for (let cy = 0, j = 0; cy < 3; cy++) {
+        for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx < 3 - cy; cx++, j++) {
+          let f = fx[cx] * fy2
+          p += p_ac[j] * f
+          q += q_ac[j] * f
+        }
+      }
+
+      // Decode A
+      if (hasAlpha)
+        for (let cy = 0, j = 0; cy < 5; cy++)
+          for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx < 5 - cy; cx++, j++)
+            a += a_ac[j] * fx[cx] * fy2
+
+      // Convert to RGB
+      let b = l - 2 / 3 * p
+      let r = (3 * l - b + q) / 2
+      let g = r - q
+      rgba[i] = max(0, 255 * min(1, r))
+      rgba[i + 1] = max(0, 255 * min(1, g))
+      rgba[i + 2] = max(0, 255 * min(1, b))
+      rgba[i + 3] = max(0, 255 * min(1, a))
+    }
+  }
+  return { w, h, rgba }
+}
+
+/**
+ * Extracts the average color from a ThumbHash. RGB is not be premultiplied by A.
+ *
+ * @param hash The bytes of the ThumbHash.
+ * @returns The RGBA values for the average color. Each value ranges from 0 to 1.
+ */
+function thumbHashToAverageRGBA(hash) {
+  let { min, max } = Math
+  let header = hash[0] | (hash[1] << 8) | (hash[2] << 16)
+  let l = (header & 63) / 63
+  let p = ((header >> 6) & 63) / 31.5 - 1
+  let q = ((header >> 12) & 63) / 31.5 - 1
+  let hasAlpha = header >> 23
+  let a = hasAlpha ? (hash[5] & 15) / 15 : 1
+  let b = l - 2 / 3 * p
+  let r = (3 * l - b + q) / 2
+  let g = r - q
+  return {
+    r: max(0, min(1, r)),
+    g: max(0, min(1, g)),
+    b: max(0, min(1, b)),
+    a
+  }
+}
+
+/**
+ * Extracts the approximate aspect ratio of the original image.
+ *
+ * @param hash The bytes of the ThumbHash.
+ * @returns The approximate aspect ratio (i.e. width / height).
+ */
+function thumbHashToApproximateAspectRatio(hash) {
+  let header = hash[3]
+  let hasAlpha = hash[2] & 0x80
+  let isLandscape = hash[4] & 0x80
+  let lx = isLandscape ? hasAlpha ? 5 : 7 : header & 7
+  let ly = isLandscape ? header & 7 : hasAlpha ? 5 : 7
+  return lx / ly
+}
+
+/**
+ * Encodes an RGBA image to a PNG data URL. RGB should not be premultiplied by
+ * A. This is optimized for speed and simplicity and does not optimize for size
+ * at all. This doesn't do any compression (all values are stored uncompressed).
+ *
+ * @param w The width of the input image. Must be ≤100px.
+ * @param h The height of the input image. Must be ≤100px.
+ * @param rgba The pixels in the input image, row-by-row. Must have w*h*4 elements.
+ * @returns A data URL containing a PNG for the input image.
+ */
+const rgbaToDataURL = self.rgbaToDataURL = function rgbaToDataURL(w, h, rgba) {
+  let row = w * 4 + 1
+  let idat = 6 + h * (5 + row)
+  let bytes = [
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0,
+    w >> 8, w & 255, 0, 0, h >> 8, h & 255, 8, 6, 0, 0, 0, 0, 0, 0, 0,
+    idat >>> 24, (idat >> 16) & 255, (idat >> 8) & 255, idat & 255,
+    73, 68, 65, 84, 120, 1
+  ]
+  let table = [
+    0, 498536548, 997073096, 651767980, 1994146192, 1802195444, 1303535960,
+    1342533948, -306674912, -267414716, -690576408, -882789492, -1687895376,
+    -2032938284, -1609899400, -1111625188
+  ]
+  let a = 1, b = 0
+  for (let y = 0, i = 0, end = row - 1; y < h; y++, end += row - 1) {
+    bytes.push(y + 1 < h ? 0 : 1, row & 255, row >> 8, ~row & 255, (row >> 8) ^ 255, 0)
+    for (b = (b + a) % 65521; i < end; i++) {
+      let u = rgba[i] & 255
+      bytes.push(u)
+      a = (a + u) % 65521
+      b = (b + a) % 65521
+    }
+  }
+  bytes.push(
+    b >> 8, b & 255, a >> 8, a & 255, 0, 0, 0, 0,
+    0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130
+  )
+  for (let [start, end] of [[12, 29], [37, 41 + idat]]) {
+    let c = ~0
+    for (let i = start; i < end; i++) {
+      c ^= bytes[i]
+      c = (c >>> 4) ^ table[c & 15]
+      c = (c >>> 4) ^ table[c & 15]
+    }
+    c = ~c
+    bytes[end++] = c >>> 24
+    bytes[end++] = (c >> 16) & 255
+    bytes[end++] = (c >> 8) & 255
+    bytes[end++] = c & 255
+  }
+  return 'data:image/png;base64,' + btoa(String.fromCharCode(...bytes))
+}
+
+/**
+ * Decodes a ThumbHash to a PNG data URL. This is a convenience function that
+ * just calls "thumbHashToRGBA" followed by "rgbaToDataURL".
+ *
+ * @param hash The bytes of the ThumbHash.
+ * @returns A data URL containing a PNG for the rendered ThumbHash.
+ */
+const thumbHashToDataURL = self.thumbHashToDataURL = function thumbHashToDataURL(hash) {
+  let image = thumbHashToRGBA(hash)
+  return rgbaToDataURL(image.w, image.h, image.rgba)
+}
+
+
+Object.assign(app.modules.browser.vendor.ThumbHash,self);
+
+return self;
+}).call({},self);
+
+Object.assign(app.modules.browser.vendor,self);
+
+return self;
+}).call({},self);
 
 Object.assign(app.modules.browser,self);
 
@@ -1884,6 +2822,8 @@ app.modules.canvasMethod = {};
 
 const module_canvasMethod = self.module_canvasMethod = (function(){
   const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".canvasMethod";
 // ================================================

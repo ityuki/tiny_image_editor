@@ -6,5 +6,7 @@ const Tie = (function(){
   const $tie = app.$tie = app;
 
   const self = this;
+  const parent = self.parent = null;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID;
