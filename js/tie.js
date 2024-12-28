@@ -739,21 +739,28 @@ const Canvas = self.Canvas = class Canvas {
   setResizeType(type){
     this.resizeType = type;
   }
-  resizeRect(x,y,w,h){
+  getRawCanvas(){
+    return this.raw;
+  }
+  getRawContext(){
+    return this.raw.getContext('2d');
+  }
+  getCopiedCanvas(){
     const tcanvas = this.main.window.document.createElement('canvas');
     tcanvas.width = this.raw.width;
     tcanvas.height = this.raw.height;
     this.rcopy(tcanvas);
+    return tcanvas;
+  }
+  resizeRect(x,y,w,h){
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = w;
     this.raw.height = h;
     this.fill([255,255,255,0]);
     this.copyRect(tcanvas,w,h,x,y,0,0);
   }
   resize(width,height){
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = width;
     this.raw.height = height;
     let x = 0;
@@ -783,10 +790,7 @@ const Canvas = self.Canvas = class Canvas {
     if (width === this.raw.width && height === this.raw.height){
       return true;
     }
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     const tcontext = tcanvas.getContext('2d');
     this.raw.width = width;
     this.raw.height = height;
@@ -947,10 +951,7 @@ const Canvas = self.Canvas = class Canvas {
       this.fill([255,255,255,0]);
       return true;
     }
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = tcanvas.width+x;
     this.raw.height = tcanvas.height+y;
     this.copyRect(tcanvas,tcanvas.width,tcanvas.height,0,0,x,y);
@@ -1018,10 +1019,7 @@ const Canvas = self.Canvas = class Canvas {
     }
   }
   rotate(centerX,centerY,angle){
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
@@ -1037,11 +1035,8 @@ const Canvas = self.Canvas = class Canvas {
     if (angle === 0){
       return;
     }
+    const tcanvas = this.getCopiedCanvas();
     if (angle === 180){
-      const tcanvas = this.main.window.document.createElement('canvas');
-      tcanvas.width = this.raw.width;
-      tcanvas.height = this.raw.height;
-      this.rcopy(tcanvas);
       this.raw.width = tcanvas.width;
       this.raw.height = tcanvas.height;
       const context = this.raw.getContext('2d');
@@ -1049,10 +1044,6 @@ const Canvas = self.Canvas = class Canvas {
       context.drawImage(tcanvas,-tcanvas.width,-tcanvas.height);
       return;
     }
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
     if (angle === 90 || angle === 270){
       this.raw.width = tcanvas.height;
       this.raw.height = tcanvas.width;
@@ -1091,10 +1082,7 @@ const Canvas = self.Canvas = class Canvas {
     this.fit();
   }
   flipHorizontal(){
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
@@ -1102,10 +1090,7 @@ const Canvas = self.Canvas = class Canvas {
     context.drawImage(tcanvas,-tcanvas.width,0);
   }
   flipVertical(){
-    const tcanvas = this.main.window.document.createElement('canvas');
-    tcanvas.width = this.raw.width;
-    tcanvas.height = this.raw.height;
-    this.rcopy(tcanvas);
+    const tcanvas = this.getCopiedCanvas();
     this.raw.width = tcanvas.width;
     this.raw.height = tcanvas.height;
     const context = this.raw.getContext('2d');
