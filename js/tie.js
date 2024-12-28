@@ -739,6 +739,16 @@ const Canvas = self.Canvas = class Canvas {
   setResizeType(type){
     this.resizeType = type;
   }
+  resizeRect(x,y,w,h){
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = w;
+    this.raw.height = h;
+    this.fill([255,255,255,0]);
+    this.copyRect(tcanvas,w,h,x,y,0,0);
+  }
   resize(width,height){
     const tcanvas = this.main.window.document.createElement('canvas');
     tcanvas.width = this.raw.width;
@@ -945,6 +955,66 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.height = tcanvas.height+y;
     this.copyRect(tcanvas,tcanvas.width,tcanvas.height,0,0,x,y);
   }
+  getFitRect(){
+    let sx = null;
+    let sy = null;
+    let ex = null;
+    let ey = null;
+    const context = this.raw.getContext('2d');
+    const img = context.getImageData(0,0,this.raw.width,this.raw.height);
+    for(let i = 0; i < this.raw.width; i++){
+      let tx = null;
+      for(let j = 0; j < this.raw.height; j++){
+        const index = (j * this.raw.width + i) * 4;
+        if (img.data[index + 3] !== 0){
+          if (tx === null){
+            tx = i;
+          }
+          if (sy === null){
+            sy = j;
+          }
+          ey = j;
+        }
+      }
+      if (tx !== null){
+        if (sx === null){
+          sx = i;
+        }else{
+          if (tx < sx){
+            sx = tx;
+          }
+        }
+        if (ex === null){
+          ex = i;
+        }else{
+          if (tx > ex){
+            ex = tx;
+          }
+        }
+      }
+    }
+    if (sx === null || sy === null || ex === null || ey === null){
+      return null;
+    }
+    if (sx >= ex || sy >= ey){
+      return null;
+    }
+    return {
+      x: sx,
+      y: sy,
+      w: ex - sx,
+      h: ey - sy,
+    };
+  }
+  fit(){
+    const rect = this.getFitRect();
+    if (rect === null){
+      this.resize(1,1);
+      this.fill([255,255,255,0]);
+    }else{
+      this.resizeRect(rect.x,rect.y,rect.w,rect.h);
+    }
+  }
   rotate(centerX,centerY,angle){
     const tcanvas = this.main.window.document.createElement('canvas');
     tcanvas.width = this.raw.width;
@@ -959,6 +1029,22 @@ const Canvas = self.Canvas = class Canvas {
   }
   rotateCenter(angle){
     return this.rotate(this.raw.width / 2,this.raw.height / 2,angle);
+  }
+  rotateAutosize(centerX,centerY,angle){
+    const dx = Math.abs(centerX);
+    const dy = Math.abs(centerY);
+    const tcanvas = this.main.window.document.createElement('canvas');
+    tcanvas.width = this.raw.width;
+    tcanvas.height = this.raw.height;
+    this.rcopy(tcanvas);
+    this.raw.width = (tcanvas.width+dx)*2;
+    this.raw.height = (tcanvas.height+dy)*2;
+    this.fill([255,255,255,0]);
+    const context = this.raw.getContext('2d');
+    context.translate(centerX+tcanvas.width,centerY+tcanvas.height);
+    context.rotate(angle * Math.PI / 180);
+    context.drawImage(tcanvas,-tcanvas.width / 2,-tcanvas.height / 2);
+    //this.fit();
   }
   flipHorizontal(){
     const tcanvas = this.main.window.document.createElement('canvas');
