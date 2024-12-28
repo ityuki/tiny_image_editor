@@ -205,10 +205,10 @@ const Canvas = self.Canvas = class Canvas {
   setResizeType(type){
     this.resizeType = type;
   }
-  getRawCanvas(){
+  getCanvas(){
     return this.raw;
   }
-  getRawContext(){
+  getContext(){
     return this.raw.getContext('2d');
   }
   getCopiedCanvas(){
