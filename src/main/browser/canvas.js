@@ -660,7 +660,7 @@ const Canvas = self.Canvas = class Canvas {
           this.raw.width = img.width;
           this.raw.height = img.height;
           context.globalAlpha = 1;
-          context.globalCompositeOperation = Layer.OverlapType.Copy;
+          context.globalCompositeOperation = Canvas.OverlapType.Copy;
           context.drawImage(img,0,0);
         };
         img.onerror = () => {
