@@ -1,8 +1,11 @@
 const BaseLayer = self.BaseLayer = class BaseLayer {
   static currentLayerId = 0;
-  constructor(main,width,height) {
+  constructor(main,width,height,opt) {
     BaseLayer.currentLayerId++;
     this.id = BaseLayer.currentLayerId;
+    if (!opt) {
+      opt = {};
+    }
     this.main = main;
     this.aboveLayers = [];
     this.belowLayers = [];
@@ -15,6 +18,10 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     this.canvas = new parent.Canvas(main,width,height);
     this.visible = true;
     this.syncPositionLayers = [];
+    this.writeClip = false;
+    if (opt.writeClip === true) {
+      this.writeClip = opt.writeClip;
+    }
   }
   addSyncPositionLayer(layer) {
     this.syncPositionLayers.push(layer);
@@ -221,7 +228,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       let s = 0;
       let sw = 0;
       let sh = 0;
-      if (this.angle === 0 || this.angle === 180) {
+      if (this.angle === 0) {
         // DO NOTHING
       }else {
         const tempw = crect.w;
@@ -229,17 +236,32 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         sw = Math.ceil(tempw * Math.abs(Math.cos(this.angle * Math.PI / 180)) + temph * Math.abs(Math.sin(this.angle * Math.PI / 180)));
         sh = Math.ceil(tempw * Math.abs(Math.sin(this.angle * Math.PI / 180)) + temph * Math.abs(Math.cos(this.angle * Math.PI / 180)));
         s = sw + sh;
-        crect.w = s;
-        crect.h = s;
       }
       //crect.w += Math.abs(this.position.x);
       //crect.h += Math.abs(this.position.y);
       const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+      if (this.writeClip === true) {
+        tcanvas.resizeRect(0,0,this.canvas.getRect().w,this.canvas.getRect().h);
+      }
       this.outputBelowLayers(tcanvas,{});
-      this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},{});
-      tcanvas.rotate(sw+this.position.x+this.canvas.getRect().w/2,sh+this.position.y+this.canvas.getRect().h/2,this.angle);
-      tcanvas.resizeRect(sw,sh,this.canvas.getRect().w,this.canvas.getRect().h);
-      this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),{});
+      if (this.angle === 0) {
+        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},{});
+        tcanvas.rotateCenter(this.angle);
+        this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),{});
+      }else {
+        const ow = tcanvas.getRect().w;
+        const oh = tcanvas.getRect().h;
+        tcanvas.setResizeType(parent.Canvas.ResizeType.Center);
+        tcanvas.resize(s*2,s*2);
+        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},{});
+        tcanvas.rotateCenter(this.angle);
+        tcanvas.resizeRect(s-this.canvas.getRect().w/2-this.position.x,s-this.canvas.getRect().h/2-this.position.y,ow,oh);
+        if (this.writeClip === true) {
+          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},{});
+        }else{
+          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},{});
+        }
+      }
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);

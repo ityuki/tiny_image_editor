@@ -33,7 +33,7 @@ const Main = self.Main = class Main {
     this.clearpatternLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.clearpatternLayer.insertLastLayer(this.viewerLayer);
 
-    this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height,{writeClip: true});
     this.baseLayer.insertLastLayer(this.clearpatternLayer);
     this.baseLayer.addSyncPositionLayer(this.clearpatternLayer);
 
