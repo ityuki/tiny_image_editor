@@ -732,11 +732,13 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         crect.w = canvas.width;
         crect.h = canvas.height;
       }
+      crect.w += Math.abs(this.position.x);
+      crect.h += Math.abs(this.position.y);
       const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
-      this.outputBelowLayers(tcanvas,{nonDiffPos: true});
-      this.outputToCanvas(tcanvas,{nonDiffPos: true});
-      tcanvas.rotateAutosize(this.angle,{once: true});
-      this.outputToCanvasFromCanvas(tcanvas,canvas);
+      this.outputBelowLayers(tcanvas,{nonDiffPos: false});
+      this.outputToCanvas(tcanvas,{nonDiffPos: false});
+      tcanvas.rotate(this.position.x+this.canvas.getRect().w/2,this.position.y+this.canvas.getRect().h/2,this.angle);
+      this.outputToCanvasFromCanvas(tcanvas,canvas,{nonDiffPos: true});
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
