@@ -1,4 +1,9 @@
 const BaseLayer = self.BaseLayer = class BaseLayer {
+  static LayerTransformType = {
+    Position: 1,
+    Angle: 2,
+  };
+
   static currentLayerId = 0;
   constructor(main,width,height,opt) {
     BaseLayer.currentLayerId++;
@@ -278,5 +283,81 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   }
   getCanvas() {
     return this.canvas;
+  }
+  getLayerList(target,exceptList) {
+    if (target == null){
+      return null;
+    }
+    if (exceptList === undefined || exceptList === null){
+      exceptList = [];
+    }
+    if (target === this){
+      if (exceptList.indexOf(this) !== -1){
+        return [];
+      }
+      return [this];
+    }
+    if (this.belowLayers.length > 0){
+      for (let layer of this.belowLayers){
+        if (layer instanceof BaseLayer){
+          const r = layer.getLayerList(target,exceptList);
+          if (r != null){
+            if (exceptList.indexOf(this) !== -1){
+              return r;
+            }
+            r.unshift(this);
+            return r;
+          }
+        }
+      }
+    }
+    if (this.layerChain.next){
+      const r = this.layerChain.next.getLayerList(target,exceptList);
+      if (r != null){
+        if (exceptList.indexOf(this) !== -1){
+          return r;
+        }
+        r.unshift(this);
+        return r;
+      }
+    }
+    return null;
+  }
+  getLayerTransform(){
+    if (this.position.x === 0 && this.position.y === 0 && this.angle === 0){
+      return [];
+    }
+    let r = [];
+    if (this.position.x !== 0 || this.position.y !== 0){
+      r.push({
+        type: BaseLayer.LayerTransformType.Position,
+        x: this.position.x,
+        y: this.position.y,
+        layer: this,
+      });
+    }
+    if (this.angle !== 0){
+      r.push({
+        type: BaseLayer.LayerTransformType.Angle,
+        x: this.canvas.getRect().w/2+this.position.x,
+        y: this.canvas.getRect().h/2+this.position.y,
+        angle: this.angle,
+        layer: this,
+      });
+    }
+    return r;
+  }
+  getLayerTransformList(layerList){
+    if (layerList == null){
+      return null;
+    }
+    let transformList = [];
+    for (let layer of layerList){
+      const t = layer.getLayerTransform();
+      if (t != null){
+        transformList = transformList.concat(t);
+      }
+    }
+    return transformList;
   }
 }
