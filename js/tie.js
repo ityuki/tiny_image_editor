@@ -656,8 +656,13 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     const crect = srcCanvas.getRect();
     let diffPos = this.getPosition();
-    if (opt.nonDiffPos === true) {
-      diffPos = { x: 0, y: 0 };
+    if (opt.diffPos) {
+      if (opt.diffPos.x) {
+        diffPos.x = opt.diffPos.x;
+      }
+      if (opt.diffPos.y) {
+        diffPos.y = opt.diffPos.y;
+      }
     }
     if (destCanvas instanceof parent.Canvas) {
       destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,diffPos.x,diffPos.y);
@@ -732,24 +737,25 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         crect.w = canvas.width;
         crect.h = canvas.height;
       }
+      let s = 0;
       if (this.angle === 0 || this.angle === 180) {
         // DO NOTHING
       }else {
         const tempw = crect.w;
         const temph = crect.h;
-        let s = Math.ceil(tempw * Math.abs(Math.cos(this.angle * Math.PI / 180)) + temph * Math.abs(Math.sin(this.angle * Math.PI / 180)));
+        s = Math.ceil(tempw * Math.abs(Math.cos(this.angle * Math.PI / 180)) + temph * Math.abs(Math.sin(this.angle * Math.PI / 180)));
         s += Math.ceil(tempw * Math.abs(Math.sin(this.angle * Math.PI / 180)) + temph * Math.abs(Math.cos(this.angle * Math.PI / 180)));
-        crect.w = s;
-        crect.h = s;
+        crect.w = s*2;
+        crect.h = s*2;
       }
       crect.w += Math.abs(this.position.x);
       crect.h += Math.abs(this.position.y);
       const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
-      this.outputBelowLayers(tcanvas,{nonDiffPos: false});
-      this.outputToCanvas(tcanvas,{nonDiffPos: false});
-      tcanvas.rotate(this.position.x+this.canvas.getRect().w/2,this.position.y+this.canvas.getRect().h/2,this.angle);
-      tcanvas.resize(this.canvas.getRect().w,this.canvas.getRect().h);
-      this.outputToCanvasFromCanvas(tcanvas,canvas,{nonDiffPos: true});
+      this.outputBelowLayers(tcanvas,{diffPos:{x:s,y:s}});
+      this.outputToCanvas(tcanvas,{diffPos:{x:s,y:s}});
+      tcanvas.rotate(s+this.position.x+this.canvas.getRect().w/2,s+this.position.y+this.canvas.getRect().h/2,this.angle);
+      tcanvas.resizeRect(s,s,this.canvas.getRect().w,this.canvas.getRect().h);
+      this.outputToCanvasFromCanvas(tcanvas,canvas,{});
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
