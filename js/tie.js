@@ -650,12 +650,11 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas,opt) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,opt) {
     if (!opt) {
       opt = {};
     }
     const crect = srcCanvas.getRect();
-    let diffPos = this.getPosition();
     if (opt.diffPos) {
       if (opt.diffPos.x) {
         diffPos.x = opt.diffPos.x;
@@ -678,7 +677,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
   }
   outputToCanvas(canvas,opt) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas,opt);
+    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),opt);
   }
   outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
@@ -738,24 +737,27 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         crect.h = canvas.height;
       }
       let s = 0;
+      let sw = 0;
+      let sh = 0;
       if (this.angle === 0 || this.angle === 180) {
         // DO NOTHING
       }else {
         const tempw = crect.w;
         const temph = crect.h;
-        s = Math.ceil(tempw * Math.abs(Math.cos(this.angle * Math.PI / 180)) + temph * Math.abs(Math.sin(this.angle * Math.PI / 180)));
-        s += Math.ceil(tempw * Math.abs(Math.sin(this.angle * Math.PI / 180)) + temph * Math.abs(Math.cos(this.angle * Math.PI / 180)));
-        crect.w = s*2;
-        crect.h = s*2;
+        sw = Math.ceil(tempw * Math.abs(Math.cos(this.angle * Math.PI / 180)) + temph * Math.abs(Math.sin(this.angle * Math.PI / 180)));
+        sh = Math.ceil(tempw * Math.abs(Math.sin(this.angle * Math.PI / 180)) + temph * Math.abs(Math.cos(this.angle * Math.PI / 180)));
+        s = sw + sh;
+        crect.w = s;
+        crect.h = s;
       }
-      crect.w += Math.abs(this.position.x);
-      crect.h += Math.abs(this.position.y);
+      //crect.w += Math.abs(this.position.x);
+      //crect.h += Math.abs(this.position.y);
       const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
-      this.outputBelowLayers(tcanvas,{diffPos:{x:s,y:s}});
-      this.outputToCanvas(tcanvas,{diffPos:{x:s,y:s}});
-      tcanvas.rotate(s+this.position.x+this.canvas.getRect().w/2,s+this.position.y+this.canvas.getRect().h/2,this.angle);
-      tcanvas.resizeRect(s,s,this.canvas.getRect().w,this.canvas.getRect().h);
-      this.outputToCanvasFromCanvas(tcanvas,canvas,{});
+      this.outputBelowLayers(tcanvas,{});
+      this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},{});
+      tcanvas.rotate(sw+this.position.x+this.canvas.getRect().w/2,sh+this.position.y+this.canvas.getRect().h/2,this.angle);
+      tcanvas.resizeRect(sw,sh,this.canvas.getRect().w,this.canvas.getRect().h);
+      this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),{});
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
