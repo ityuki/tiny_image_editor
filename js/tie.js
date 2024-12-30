@@ -520,6 +520,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   static LayerTransformType = {
     Position: 1,
     Angle: 2,
+    Scale: 3,
   };
 
   static currentLayerId = 0;
@@ -538,9 +539,12 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     this.position = { x: 0, y: 0 };
     this.angle = 0;
+    this.scale = 1;
     this.canvas = new parent.Canvas(main,width,height);
     this.visible = true;
     this.syncPositionLayers = [];
+    this.syncAngleLayers = [];
+    this.syncScaleLayers = [];
     this.writeClip = false;
     if (opt.writeClip === true) {
       this.writeClip = opt.writeClip;
@@ -551,6 +555,18 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   }
   removeSyncPositionLayer(layer) {
     this.syncPositionLayers = this.syncPositionLayers.filter(l => l !== layer);
+  }
+  addSyncAngleLayer(layer) {
+    this.syncAngleLayers.push(layer);
+  }
+  removeSyncAngleLayer(layer) {
+    this.syncAngleLayers = this.syncAngleLayers.filter(l => l !== layer);
+  }
+  addSyncScaleLayer(layer) {
+    this.syncScaleLayers.push(layer);
+  }
+  removeSyncScaleLayer(layer) {
+    this.syncScaleLayers = this.syncScaleLayers.filter(l => l !== layer);
   }
   setPosition(x, y) {
     this.position.x = x;
@@ -568,12 +584,24 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   }
   setAngle(angle) {
     this.angle = angle % 360;
+    for (let layer of this.syncAngleLayers) {
+      layer.setAngle(this.angle);
+    }
+  }
+  setScale(scale) {
+    this.scale = scale;
+    for (let layer of this.syncScaleLayers) {
+      layer.setScale(this.scale);
+    }
   }
   getAngle() {
     return this.angle;
   }
   getPosition() {
     return structuredClone(this.position);
+  }
+  getScale() {
+    return this.scale;
   }
   setVisible(visible) {
     this.visible = visible;
@@ -662,7 +690,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,opt) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,scale,opt) {
     if (!opt) {
       opt = {};
     }
@@ -675,21 +703,26 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         diffPos.y = opt.diffPos.y;
       }
     }
+    let destHTMLCanvas = null;
     if (destCanvas instanceof parent.Canvas) {
-      destCanvas.drawRect(srcCanvas,0,0,crect.w,crect.h,diffPos.x,diffPos.y);
+      destHTMLCanvas = destCanvas.getHTMLCanvas();
     }else if (destCanvas instanceof HTMLCanvasElement){
-      const context = destCanvas.getContext('2d');
-      context.save();
-      context.globalAlpha = srcCanvas.globalAlpha;
-      context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
-      context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,diffPos.x,diffPos.y,crect.w,crect.h);
-      context.restore();
+      destHTMLCanvas = destCanvas;
     }else{
       // DO NOTHING
     }
+    const context = destHTMLCanvas.getContext('2d');
+    context.save();
+    context.imageSmoothingEnabled = false;
+    context.globalAlpha = srcCanvas.globalAlpha;
+    context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
+    context.translate(diffPos.x,diffPos.y);
+    context.scale(scale,scale);
+    context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,0,0,crect.w,crect.h);
+    context.restore();
   }
   outputToCanvas(canvas,opt) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),opt);
+    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),this.scale,opt);
   }
   outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
@@ -768,21 +801,21 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
       this.outputBelowLayers(tcanvas,{});
       if (this.angle === 0) {
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},{});
+        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},1,{});
         tcanvas.rotateCenter(this.angle);
-        this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),{});
+        this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),this.scale,{});
       }else {
         const ow = tcanvas.getRect().w;
         const oh = tcanvas.getRect().h;
         tcanvas.setResizeType(parent.Canvas.ResizeType.Center);
         tcanvas.resize(s*2,s*2);
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},{});
+        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},1,{});
         tcanvas.rotateCenter(this.angle);
         tcanvas.resizeRect(s-this.canvas.getRect().w/2-this.position.x,s-this.canvas.getRect().h/2-this.position.y,ow,oh);
         if (this.writeClip === true) {
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},{});
+          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
         }else{
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},{});
+          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
         }
       }
     }
@@ -842,10 +875,19 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     return null;
   }
   getLayerTransform(){
-    if (this.position.x === 0 && this.position.y === 0 && this.angle === 0){
+    if (this.position.x === 0 && this.position.y === 0 && this.angle === 0 && this.scale === 1){
       return [];
     }
     let r = [];
+    if (this.angle !== 0){
+      r.push({
+        type: BaseLayer.LayerTransformType.Angle,
+        x: this.canvas.getRect().w/2,
+        y: this.canvas.getRect().h/2,
+        angle: this.angle,
+        layer: this,
+      });
+    }
     if (this.position.x !== 0 || this.position.y !== 0){
       r.push({
         type: BaseLayer.LayerTransformType.Position,
@@ -854,12 +896,10 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
         layer: this,
       });
     }
-    if (this.angle !== 0){
+    if (this.scale !== 1){
       r.push({
-        type: BaseLayer.LayerTransformType.Angle,
-        x: this.canvas.getRect().w/2+this.position.x,
-        y: this.canvas.getRect().h/2+this.position.y,
-        angle: this.angle,
+        type: BaseLayer.LayerTransformType.Scale,
+        scale: this.scale,
         layer: this,
       });
     }
@@ -877,6 +917,25 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
     }
     return transformList;
+  }
+  testFillRect(baseLayer,exceptList){
+    const transformList = this.getLayerTransformList(baseLayer.getLayerList(this,exceptList));
+    const ctx = this.getCanvas().getHTMLCanvas().getContext('2d');
+    ctx.save();
+    for (let transform of transformList){
+      if (transform.type === BaseLayer.LayerTransformType.Position){
+        ctx.translate(-transform.x,-transform.y);
+      }else if (transform.type === BaseLayer.LayerTransformType.Angle){
+        ctx.translate(transform.x,transform.y);
+        ctx.rotate(-transform.angle * Math.PI / 180);
+        ctx.translate(-transform.x,-transform.y);
+      }else if (transform.type === BaseLayer.LayerTransformType.Scale){
+        ctx.scale(1/transform.scale,1/transform.scale);
+      }
+    }
+    ctx.fillStyle = 'rgb(255,0,0)';
+    ctx.fillRect(100,200,10,20);
+    ctx.restore();
   }
 }
 
@@ -2456,6 +2515,8 @@ const Main = self.Main = class Main {
     this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height,{writeClip: true});
     this.baseLayer.insertLastLayer(this.clearpatternLayer);
     this.baseLayer.addSyncPositionLayer(this.clearpatternLayer);
+    this.baseLayer.addSyncAngleLayer(this.clearpatternLayer);
+    this.baseLayer.addSyncScaleLayer(this.clearpatternLayer);
 
     this.layer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer);

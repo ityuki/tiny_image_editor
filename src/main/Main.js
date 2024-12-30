@@ -36,6 +36,8 @@ const Main = self.Main = class Main {
     this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height,{writeClip: true});
     this.baseLayer.insertLastLayer(this.clearpatternLayer);
     this.baseLayer.addSyncPositionLayer(this.clearpatternLayer);
+    this.baseLayer.addSyncAngleLayer(this.clearpatternLayer);
+    this.baseLayer.addSyncScaleLayer(this.clearpatternLayer);
 
     this.layer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer);
