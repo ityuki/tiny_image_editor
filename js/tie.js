@@ -505,6 +505,35 @@ Object.assign(app.modules.browser.canvasMethod,self);
 
 return self;
 }).call({},self);
+app.modules.browser.colorTheme = {};
+
+const colorTheme = self.colorTheme = (function(){
+  const self = this.self = this;
+  const parent = self.parent = arguments[0] || null;;
+  const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
+  const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
+  const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.colorTheme";
+// ================================================
+// module: browser.colorTheme , from: default.js
+// ================================================
+const Default = self.Default = {
+  WindowIconBackgroundColor: "rgba(0,0,0,0)",
+  WindowIconColor: "rgba(95,99,104,1)",
+  WindowIconHoverBackgroundColor: "rgba(150,150,150,1)",
+  WindowIconHoverColor: "rgba(95,99,104,1)",
+  WindowTitlebarBackgroundColor: "rgba(200,200,200,1)",
+  WindowTitlebarColor: "rgba(0,0,0,1)",
+  WindowBorderColor: "rgba(0,0,0,1)",
+  WindowBackgroundColor: "rgba(255,255,255,1)",
+  WindowTooltipBackgroundColor: "rgba(0,0,0,0.8)",
+  WindowTooltipColor: "rgba(255,255,255,1)",
+}
+
+
+Object.assign(app.modules.browser.colorTheme,self);
+
+return self;
+}).call({},self);
 // ================================================
 // module: browser , from: canvas.js
 // ================================================
@@ -1245,6 +1274,148 @@ const Color = self.Color = class Color {
 }
 
 // ================================================
+// module: browser , from: colorClass.js
+// ================================================
+const ColorClass = self.ColorClass = class ColorClass {
+  constructor(theme = "default"){
+    this.themeName = theme;
+    if (theme === undefined || theme === null){
+      this.theme = null;
+    }else if (typeof theme === "string"){
+      for (let themeName in colorTheme){
+        if (!themeName.charAt(0).match(/[A-Z]/)) continue;
+        if (themeName.toLowerCase() == theme.toLowerCase()){
+          this.theme = colorTheme[themeName];
+          break;
+        }
+      }
+      if (!this.theme) this.theme = colorTheme.Default;  
+    }else{
+      this.theme = theme;
+    }
+    this.classBaseName = "";
+    this.classInstanceName = "";
+  }
+  setClassBaseName(name){
+    this.classBaseName = name;
+  }
+  setClassInstanceName(name){
+    this.classInstanceName = name;
+  }
+  getColorname2Name(colorName){
+    if (colorName === undefined || colorName === null){
+      return '';
+    }
+    return colorName
+      .replace(/Color$/g, '')
+      .replace(/[A-Z]/g, function(s){
+        return "_" + s.toLowerCase();
+      })
+      .replace(/^_/,'');
+  }
+  setColor(object,name,color){
+    if (color === undefined || color === null){
+      color = '';
+    }
+    if (object.style){
+      if (name.toLowerCase().endsWith("backgroundcolor")){
+        if (object.style.backgroundColor !== undefined){
+          object.style.backgroundColor = color;
+        }
+      }else if (name.match(/Border((?:[A-Z][a-z]+)*)Color$/)){
+        let m = name.match(/Border((?:[A-Z][a-z]+)*)Color$/);
+        let s = m[0];
+        if (object.style["border" + s + "Color"] !== undefined){
+          object.style["border" + s + "Color"] = color;
+        }
+      }else if (name.toLowerCase().endsWith("accentcolor")){
+        if (object.style.accentColor !== undefined){
+          object.style.accentColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("caretcolor")){
+        if (object.style.caretColor !== undefined){
+          object.style.caretColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("columnrulecolor")){
+        if (object.style.columnRuleColor !== undefined){
+          object.style.columnRuleColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("lightingcolor")){
+        if (object.style.lightingColor !== undefined){
+          object.style.lightingColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("outlinecolor")){
+        if (object.style.outlineColor !== undefined){
+          object.style.outlineColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("scrollbarcolor")){
+        if (object.style.scrollbarColor !== undefined){
+          object.style.scrollbarColor = color;
+        }
+      }else if (name.toLowerCase().endsWith("stopcolor")){
+        if (object.style.stopColor !== undefined){
+          object.style.stopColor = color;
+        }
+      }else if (name.match(/Text((?:[A-Z][a-z]+)*)Color$/)){
+        let m = name.match(/Text((?:[A-Z][a-z]+)*)Color$/);
+        let s = m[0];
+        if (object.style["text" + s + "Color"] !== undefined){
+          object.style["text" + s + "Color"] = color;
+        }
+      }else{
+        if (object.style.color !== undefined){
+          object.style.color = color;
+        }
+      }
+    }
+  }
+  removeClass(object,colorName,id){
+    const name = this.getColorname2Name(colorName);
+    let className = this.classBaseName + "-" + name;
+    let instanceName = className + "-" + this.classInstanceName;
+    if (object.classList !== undefined){
+      object.classList.remove(className);
+      object.classList.remove(instanceName);
+      if (id !== undefined && id !== null){
+        let instanceNameWithId = instanceName + "-" + id;
+        object.classList.remove(instanceNameWithId);
+      }
+    }
+  }
+  removeColorClass(object,colorName,id){
+    this.removeClass(object,colorName,id);
+    this.setColor(object,colorName,'');
+  }
+  setClass(object,colorName,id){
+    const name = this.getColorname2Name(colorName);
+    let className = this.classBaseName + "-" + name;
+    let instanceName = className + "-" + this.classInstanceName;
+    if (object.classList !== undefined){
+      if (!object.classList.contains(className)){
+        object.classList.add(className);
+      }
+      if (!object.classList.contains(instanceName)){
+        object.classList.add(instanceName);
+      }
+      if (id !== undefined && id !== null){
+        let instanceNameWithId = instanceName + "-" + id;
+        if (!object.classList.contains(instanceNameWithId)){
+          object.classList.add(instanceNameWithId);
+        }
+      }
+    }
+  }
+  setColorClass(object,colorName,id){
+    let color = this.theme[colorName];
+    this.setClass(object,colorName,id);
+    this.setColor(object,colorName,color);
+  }
+  getColor(colorName){
+    return this.theme[colorName];
+  }
+}
+
+// ================================================
 // module: browser , from: layer.js
 // ================================================
 const Layer = self.Layer = class Layer {
@@ -1674,10 +1845,10 @@ const Layer = self.Layer = class Layer {
 // module: browser , from: titlebar.js
 // ================================================
 const TitleBar = self.TitleBar = class TitleBar {
-  static currentWTitlebarId = 0;
+  static currentTitlebarId = 0;
   constructor(main,parentObj,options) {
-    Layer.currentTitlebarId++;
-    this.id = Layer.currentTitlebarId;
+    TitleBar.currentTitlebarId++;
+    this.id = TitleBar.currentTitlebarId;
     if (!options) {
       options = {};
     }
@@ -1685,15 +1856,24 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.visible = true;
     this.parentObj = parentObj || main.targetObj;
     this.height = 20;
-    this.bgcolor = options.bgcolor || "rgba(200,200,200,1)";
-    this.fgcolor = options.fgcolor || "rgba(0,0,0,1)";
-    this.hovercolor = options.hovercolor || "rgba(150,150,150,1)";
     this.menuIcon = options.menuIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M144-264v-72h672v72H144Zm0-180v-72h672v72H144Zm0-180v-72h672v72H144Z"/></svg>';
     this.title = options.title || "";
     this.closeIcon = options.closeIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="m291-240-51-51 189-189-189-189 51-51 189 189 189-189 51 51-189 189 189 189-51 51-189-189-189 189Z"/></svg>';
     this.fullscrIcon = options.fullscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M168-192q-29.7 0-50.85-21.16Q96-234.32 96-264.04v-432.24Q96-726 117.15-747T168-768h624q29.7 0 50.85 21.16Q864-725.68 864-695.96v432.24Q864-234 842.85-213T792-192H168Zm0-72h624v-360H168v360Z"/></svg>';
     this.minIcon = options.minIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M288-144v-72h384v72H288Z"/></svg>';
     this.normalscrIcon = options.normalscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M312-312h480v-408H312v408Zm0 72q-29.7 0-50.85-21.15Q240-282.3 240-312v-480q0-29.7 21.15-50.85Q282.3-864 312-864h480q29.7 0 50.85 21.15Q864-821.7 864-792v480q0 29.7-21.15 50.85Q821.7-240 792-240H312ZM168-96q-29.7 0-50.85-21.15Q96-138.3 96-168v-552h72v552h552v72H168Zm144-696v480-480Z"/></svg>';
+
+    if (options.color === undefined) {
+      options.color = {};
+    }
+    this.color = {
+      iconbgcolor: options.color.iconbgcolor || "WindowIconBackgroundColor",
+      iconcolor: options.color.iconcolor || "WindowIconColor",
+      iconhoverbgcolor: options.color.iconhoverbgcolor || "WindowIconHoverBackgroundColor",
+      iconhovercolor: options.color.iconhovercolor || "WindowIconHoverColor",
+      bgcolor: options.color.bgcolor || "WindowTitlebarBackgroundColor",
+      color: options.color.color || "WindowTitlebarColor",
+    };
 
     this.showMenuIcon = options.showMenuIcon || true;
     this.showTitle = options.showTitle || true;
@@ -1744,75 +1924,26 @@ const TitleBar = self.TitleBar = class TitleBar {
       close: options.onmouseout.close || function(){},
       titlebar: options.onmouseout.titlebar || function(){},
     };
+    if (options.onpointermove === undefined) {
+      options.onpointermove = {};
+    }
+    this.onpointermove = {
+      menu: options.onpointermove.menu || function(){},
+      min: options.onpointermove.min || function(){},
+      normalscr: options.onpointermove.normalscr || function(){},
+      fullscr: options.onpointermove.fullscr || function(){},
+      close: options.onpointermove.close || function(){},
+      titlebar: options.onpointermove.titlebar || function(){},
+    };
     if (options.ondrag === undefined) {
       options.ondrag = {};
     }
-    this.ondrag = {
-      menu: options.ondrag.menu || function(){},
-      min: options.ondrag.min || function(){},
-      normalscr: options.ondrag.normalscr || function(){},
-      fullscr: options.ondrag.fullscr || function(){},
-      close: options.ondrag.close || function(){},
-      titlebar: options.ondrag.titlebar || function(){},
-    };
-    if (options.ondragstart === undefined) {
-      options.ondragstart = {};
-    }
-    this.ondragstart = {
-      menu: options.ondragstart.menu || function(){},
-      min: options.ondragstart.min || function(){},
-      normalscr: options.ondragstart.normalscr || function(){},
-      fullscr: options.ondragstart.fullscr || function(){},
-      close: options.ondragstart.close || function(){},
-      titlebar: options.ondragstart.titlebar || function(){},
-    };
-    if (options.ondragend === undefined) {
-      options.ondragend = {};
-    }
-    this.ondragend = {
-      menu: options.ondragend.menu || function(){},
-      min: options.ondragend.min || function(){},
-      normalscr: options.ondragend.normalscr || function(){},
-      fullscr: options.ondragend.fullscr || function(){},
-      close: options.ondragend.close || function(){},
-      titlebar: options.ondragend.titlebar || function(){},
-    };
-    if (options.ondrop === undefined) {
-      options.ondrop = {};
-    }
-    this.ondrop = {
-      menu: options.ondrop.menu || function(){},
-      min: options.ondrop.min || function(){},
-      normalscr: options.ondrop.normalscr || function(){},
-      fullscr: options.ondrop.fullscr || function(){},
-      close: options.ondrop.close || function(){},
-      titlebar: options.ondrop.titlebar || function(){},
-    };
-    if (options.ongragover === undefined) {
-      options.ongragover = {};
-    }
-    this.ongragover = {
-      menu: options.ongragover.menu || function(){},
-      min: options.ongragover.min || function(){},
-      normalscr: options.ongragover.normalscr || function(){},
-      fullscr: options.ongragover.fullscr || function(){},
-      close: options.ongragover.close || function(){},
-      titlebar: options.ongragover.titlebar || function(){},
-    };
-    this.ondragleave = {
-      menu: options.ondragleave.menu || function(){},
-      min: options.ondragleave.min || function(){},
-      normalscr: options.ondragleave.normalscr || function(){},
-      fullscr: options.ondragleave.fullscr || function(){},
-      close: options.ondragleave.close || function(){},
-      titlebar: options.ondragleave.titlebar || function(){},
-    };
 
     this.titlebar = this.main.window.document.createElement("div");
     this.titlebar.style.width = "100%";
     this.titlebar.style.height = this.height + "px";
-    this.titlebar.style.backgroundColor = this.bgcolor;
-    this.titlebar.style.color = this.fgcolor;
+    this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
     this.titlebar.style.textAlign = "left";
     this.titlebar.style.padding = "0px";
     this.titlebar.style.margin = "0px";
@@ -1820,7 +1951,7 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titlebar.style.overflow = "hidden";
     this.titlebar.style.boxSizing = "border-box";
     this.titlebar.style.display = "flex";
-    this.titlebar.draggable = true;
+    this.titlebar.draggable = false;
     this.leftitem = this.main.window.document.createElement("div");
     this.leftitem.style.width = "auto";
     this.leftitem.style.height = this.height + "px";
@@ -1830,6 +1961,7 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.leftitem.style.boxSizing = "border-box";
     this.leftitem.style.textAlign = "left";
     this.leftitem.style.whiteSpace = "nowrap";
+    this.leftitem.draggable = false;
     this.titlebar.appendChild(this.leftitem);
     this.menuitem = this.main.window.document.createElement("div");
     this.menuitem.style.width = "auto";
@@ -1839,6 +1971,11 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.menuitem.style.overflow = "hidden";
     this.menuitem.style.boxSizing = "border-box";
     this.menuitem.style.textAlign = "left";
+    this.menuitem.draggable = false;
+    this.main.colorClass.setColorClass(this.menuitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.menuitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.menuitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.menuitem,this.color.iconhovercolor,this.id);
     this.menuitem.innerHTML = this.menuIcon;
     this.leftitem.appendChild(this.menuitem);
     this.titleitem = this.main.window.document.createElement("div");
@@ -1853,6 +1990,9 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titleitem.style.boxSizing = "border-box";
     this.titleitem.style.fontSize = "14px";
     this.titleitem.style.whiteSpace = "nowrap";
+    this.titleitem.draggable = false;
+    this.main.colorClass.setColorClass(this.menuitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.menuitem,this.color.color,this.id);
     this.titleitem.innerHTML = this.title;
     this.titlebar.appendChild(this.titleitem);
     this.rightitem = this.main.window.document.createElement("div");
@@ -1866,11 +2006,17 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.rightitem.style.marginLeft = "auto";
     this.rightitem.style.whiteSpace = "nowrap";
     this.rightitem.style.display = "flex";
+    this.rightitem.draggable = false;
     this.titlebar.appendChild(this.rightitem);
     this.minitem = this.main.window.document.createElement("div");
     this.minitem.style.width = "auto";
     this.minitem.style.height = this.height + "px";
     this.minitem.style.overflow = "hidden";
+    this.minitem.draggable = false;
+    this.main.colorClass.setColorClass(this.minitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.minitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.minitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.minitem,this.color.iconhovercolor,this.id);
     this.minitem.innerHTML = this.minIcon;
     this.rightitem.appendChild(this.minitem);
     this.normalscritem = this.main.window.document.createElement("div");
@@ -1878,38 +2024,59 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.normalscritem.style.height = this.height + "px";
     this.normalscritem.style.overflow = "hidden";
     this.normalscritem.innerHTML = this.normalscrIcon;
+    this.normalscritem.draggable = false;
+    this.main.colorClass.setColorClass(this.normalscritem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.normalscritem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.normalscritem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.normalscritem,this.color.iconhovercolor,this.id);
     this.rightitem.appendChild(this.normalscritem);
     this.fullscritem = this.main.window.document.createElement("div");
     this.fullscritem.style.width = "auto";
     this.fullscritem.style.height = this.height + "px";
     this.fullscritem.style.overflow = "hidden";
     this.fullscritem.innerHTML = this.fullscrIcon;
+    this.fullscritem.draggable = false;
+    this.main.colorClass.setColorClass(this.fullscritem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.fullscritem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.fullscritem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.fullscritem,this.color.iconhovercolor,this.id);
     this.rightitem.appendChild(this.fullscritem);
     this.closeitem = this.main.window.document.createElement("div");
     this.closeitem.style.width = "auto";
     this.closeitem.style.height = this.height + "px";
     this.closeitem.style.overflow = "hidden";
+    this.closeitem.draggable = false;
+    this.main.colorClass.setColorClass(this.closeitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.closeitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.closeitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.closeitem,this.color.iconhovercolor,this.id);
     this.closeitem.innerHTML = this.closeIcon;
     this.rightitem.appendChild(this.closeitem);
     if (this.parentObj) {
       this.parentObj.appendChild(this.titlebar);
     }
     this.dblclickTimer = null;
+    const current = this;
     for(let itemName of ["min","normalscr","fullscr","close"]) {
       let item = this[itemName + "item"];
       item.addEventListener("mouseover", () => {
-        item.style.backgroundColor = this.hovercolor;
+        this.main.colorClass.setColorClass(item,current.color.iconhoverbgcolor,current.id);
+        this.main.colorClass.setColorClass(item,current.color.iconhovercolor,current.id);
         this.onmouseover[itemName](itemName);
       });
       item.addEventListener("mouseout", () => {
-        item.style.backgroundColor = this.bgcolor;
+        this.main.colorClass.setColorClass(item,current.color.iconbgcolor,current.id);
+        this.main.colorClass.setColorClass(item,current.color.iconcolor,current.id);
         this.onmouseout[itemName](itemName);
       });
       item.addEventListener("click", () => {
         this.onclick[itemName](itemName);
       });
+      item.addEventListener("pointermove", (e) => {
+        this.onpointermove[itemName](itemName,e);
+      });
     }
-    for(let itemName of ["menu","titlebar"]) {
+    for(let itemName of ["titlebar","menu"]) {
       let item = this[itemName + "item"];
       if (itemName === "titlebar") {
         item = this.titlebar;
@@ -1933,23 +2100,8 @@ const TitleBar = self.TitleBar = class TitleBar {
           this.onclick[itemName](itemName);
         },300);
       });
-      item.addEventListener("drag", (e) => {
-        this.ondrag[itemName](itemName,e);
-      });
-      item.addEventListener("dragstart", (e) => {
-        this.ondragstart[itemName](itemName,e);
-      });
-      item.addEventListener("dragend", (e) => {
-        this.ondragend[itemName](itemName,e);
-      });
-      item.addEventListener("drop", (e) => {
-        this.ondrop[itemName](itemName,e);
-      });
-      item.addEventListener("dragover", (e) => {
-        this.ongragover[itemName](itemName,e);
-      });
-      item.addEventListener("dragleave", (e) => {
-        this.ondragleave[itemName](itemName,e);
+      item.addEventListener("pointermove", (e) => {
+        this.onpointermove[itemName](itemName,e);
       });
     }
     this.update();
@@ -2002,8 +2154,8 @@ const Window = self.Window = class Window {
   };
   static currentWindowId = 0;
   constructor(main,parentObj,options) {
-    Layer.currentWindowId++;
-    this.id = Layer.currentWindowId;
+    Window.currentWindowId++;
+    this.id = Window.currentWindowId;
     if (!options) {
       options = {};
     }
@@ -2012,6 +2164,7 @@ const Window = self.Window = class Window {
     this.visible = true;
     this.parentObj = parentObj || null;
     this.mode = options.mode || Window.WindowMode.Normal;
+    this.childSmallWindow = [];
     this.window = this.main.window.document.createElement("div");
     if (options.fixsize) {
       this.window.style.resize = "none";
@@ -2024,11 +2177,16 @@ const Window = self.Window = class Window {
     this.window.style.top = options.top || "0px";
     this.window.style.left = options.left || "0px";
     this.window.style.borderWidth = "1px";
-    this.window.style.borderColor = "rgba(0,0,0,1)";
+    this.main.colorClass.setColor(this.window,"WindowBorderColor",this.id);
     this.window.style.borderStyle = "solid";
     if (parentObj) {
       this.window.style.position = "absolute";
-      this.parentObj.appendChild(this.window);
+      this.window.boxSize = "border-box";
+      if (parentObj instanceof Window) {
+        this.parentObj.body.appendChild(this.window);
+      }else{
+        this.parentObj.appendChild(this.window);
+      }
     }else{
       this.window.style.position = "fixed";
       this.main.window.document.body.appendChild(this.window);
@@ -2037,12 +2195,12 @@ const Window = self.Window = class Window {
     this.tooltip = this.main.window.document.createElement("div");
     this.tooltip.style.position = "fixed";
     this.tooltip.style.display = "none";
-    this.tooltip.style.backgroundColor = "rgba(0,0,0,0.8)";
-    this.tooltip.style.color = "rgba(255,255,255,1)";
+    this.main.colorClass.setColorClass(this.tooltip,"WindowTooltipBackgroundColor",this.id);
+    this.main.colorClass.setColorClass(this.tooltip,"WindowTooltipColor",this.id);
     this.tooltip.style.padding = "4px";
     this.tooltip.style.borderRadius = "4px";
     this.tooltip.style.zIndex = "1000";
-    this.tooltip.style.boxShadow = "0px 0px 4px rgba(0,0,0,0.8)";
+    this.tooltip.style.boxShadow = "0px 0px 4px " + this.main.colorClass.getColor("WindowTooltipBackgroundColor");
     this.tooltip.style.transition = "opacity 0.2s";
     this.window.appendChild(this.tooltip);
     this.window.appendChild(this.titlebar);
@@ -2056,6 +2214,17 @@ const Window = self.Window = class Window {
     const current = this;
     this.changeMode = function(mode) {
       if (current.original.lastMode === Window.WindowMode.Minimized) {
+        if (current.parentObj instanceof Window) {
+          current.parentObj.childSmallWindow = current.parentObj.childSmallWindow.map((e,i) => {
+            if (e === current) {
+              return null;
+            }
+            return e;
+          });
+          while(current.parentObj.childSmallWindow[current.parentObj.childSmallWindow.length - 1] === null){
+            current.parentObj.childSmallWindow.pop();
+          }
+        }
         switch (mode) {
           case Window.WindowMode.Normal:
             current.titlebarObj.showMinIcon = true;
@@ -2073,8 +2242,8 @@ const Window = self.Window = class Window {
             current.titlebarObj.showTitle = true;
             current.window.style.top = "0px";
             current.window.style.left = "0px";
-            current.window.style.width = "100%";
-            current.window.style.height = "100%";
+            current.window.style.width = "calc(100%-2px)";
+            current.window.style.height = "calc(100%-2px)";
             current.original.lastMode = Window.WindowMode.FullScreen;
             break;
         }
@@ -2096,8 +2265,8 @@ const Window = self.Window = class Window {
           current.original.lastMode = Window.WindowMode.FullScreen,
           current.window.style.top = "0px";
           current.window.style.left = "0px";
-          current.window.style.width = "100%";
-          current.window.style.height = "100%";
+          current.window.style.width = "calc(100% - 2px)";
+          current.window.style.height = "calc(100% - 2px)";
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = false;
           current.titlebarObj.showTitle = true;
@@ -2113,32 +2282,26 @@ const Window = self.Window = class Window {
             current.titlebarObj.showFullscrIcon = true;
           }
           current.original.lastMode = Window.WindowMode.Minimized;
-          current.window.style.top = "0px";
-          current.window.style.left = "0px";
+          current.window.style.top = "calc(100% - 20px)";
+          if (current.parentObj instanceof Window) {
+            let idx = current.parentObj.childSmallWindow.indexOf(null);
+            if (idx < 0) {
+              idx = current.parentObj.childSmallWindow.length;
+              current.parentObj.childSmallWindow.push(current);
+            }
+            current.window.style.left = (idx * 60) + "px";
+            current.parentObj.childSmallWindow[idx] = current;
+          }else{
+            current.window.style.left = "0px";
+          }
           current.window.style.width = "60px";
-          current.window.style.height = "16px";
+          current.window.style.height = "20px";  
           current.titlebarObj.showMinIcon = false;
           current.titlebarObj.showTitle = false;
           break;
       }
       current.titlebarObj.update();
     };
-    this.startmouseoffset = {
-      x: 0,
-      y: 0,
-    }
-    this.inDraging = false;
-    const drag_handler = function(e) {
-      e.preventDefault();
-    };
-    const allowDropEventAll = function(){
-      current.main.window.document.addEventListener("drop",drag_handler);
-      current.main.window.document.addEventListener("dragover",drag_handler);
-    }
-    const removeDropEventAll = function(){
-      current.main.window.document.removeEventListener("drop",drag_handler);
-      current.main.window.document.removeEventListener("dragover",drag_handler);
-    }
     this.titlebarObj = new TitleBar(this.main,this.titlebar,{
       title: options.title || "Window",
       onclick: {
@@ -2178,7 +2341,15 @@ const Window = self.Window = class Window {
           current.tooltip.style.display = "block";
           current.tooltip.innerHTML = current.titlebarObj.title;
           current.tooltip.style.left = current.titlebarObj.menuitem.getBoundingClientRect().left + "px";
-          current.tooltip.style.top = current.titlebarObj.menuitem.getBoundingClientRect().bottom + "px";
+          if (current.parentObj instanceof Window) {
+            if (current.titlebarObj.menuitem.getBoundingClientRect().bottom > current.parentObj.body.getBoundingClientRect().bottom/2) {
+              current.tooltip.style.top = current.titlebarObj.menuitem.getBoundingClientRect().top - current.tooltip.getBoundingClientRect().height + "px";
+            }else{
+              current.tooltip.style.top = current.titlebarObj.menuitem.getBoundingClientRect().bottom + "px";
+            }
+          }else{
+            current.tooltip.style.top = current.titlebarObj.menuitem.getBoundingClientRect().bottom + "px";
+          }
         },
       },
       onmouseout: {
@@ -2186,54 +2357,25 @@ const Window = self.Window = class Window {
           current.tooltip.style.display = "none";
         },
       },
-      ondrag: {
+      onpointermove: {
         titlebar: function(target,e) {
-          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
-          current.tooltip.style.display = "none";
-          if (e.screenX === 0 && e.screenY === 0) {
-            return;
+          if(e.buttons){
+            if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+            current.tooltip.style.display = "none";
+            if (e.screenX === 0 && e.screenY === 0) {
+              return;
+            }
+            current.window.style.left     = current.window.offsetLeft + e.movementX + 'px';
+            current.window.style.top      = current.window.offsetTop  + e.movementY + 'px';
+            //current.window.style.position = 'absolute';
+            current.original.top = current.window.style.top;
+            current.original.left = current.window.style.left;
+            current.titlebarObj.titlebar.setPointerCapture(e.pointerId);
           }
-          current.window.style.top = (e.clientY-current.startmouseoffset.y) + "px";
-          current.window.style.left = (e.clientX-current.startmouseoffset.x) + "px";
-          current.original.top = current.window.style.top;
-          current.original.left = current.window.style.left;
-        },
-      },
-      ondragstart: {
-        titlebar: function(target,e) {
-          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
-          current.startmouseoffset.x = e.offsetX;
-          current.startmouseoffset.y = e.offsetY;
-          current.tooltip.style.display = "none";
-          current.window.style.opacity = 0.5;
-          allowDropEventAll();
-          current.inDraging = true;
-        },
-      },
-      ondragend: {
-        titlebar: function(target,e) {
-          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
-          current.window.style.opacity = 1;
-          //current.window.style.top = (e.clientY-current.startmouseoffset.y) + "px";
-          //current.window.style.left = (e.clientX-current.startmouseoffset.x) + "px";
-          //current.original.top = current.window.style.top;
-          //current.original.left = current.window.style.left;
-          current.window.style.top = current.original.top;
-          current.window.style.left = current.original.left;
-          removeDropEventAll();
-          current.inDraging = false;
-        },
-      },
-      ondragleave: {
-        titlebar: function(target,e) {
-          e.preventDefault();
-          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
-          current.isDraging = false;
-          current.window.style.top = current.original.top;
-          current.window.style.left = current.original.left;
         },
       },
     });
+    this.bodybarria = this.main.window.document.createElement("div");
     this.body = this.main.window.document.createElement("div");
     if (options.enableVScrollbar) {
       if (options.enableHScrollbar) {
@@ -2274,11 +2416,20 @@ const Window = self.Window = class Window {
         this.body.style.overflow = "hidden";
       }
     }
-    this.window.appendChild(this.body);
+    this.window.appendChild(this.bodybarria);
+    this.bodybarria.appendChild(this.body);
+    this.bodybarria.style.position = "absolute";
+    this.bodybarria.top = "0px";
+    this.bodybarria.left = "0px";
+    this.bodybarria.style.width = "100%";
+    this.bodybarria.style.height = "calc(100% - " + (this.titlebarObj.titlebar.style.height).replace(/px$/,"") + "px)";
+    this.bodybarria.style.overflow = "hidden";
     this.body.style.width = "100%";
-    this.body.style.height = "calc(100% - " + (this.titlebarObj.titlebar.style.height).replace(/px$/,"") + "px)";
-    this.body.style.backgroundColor = "rgba(255,255,255,1)";
+    this.body.style.height = "100%";
+    this.body.style.top = "0px";
+    this.body.style.left = "0px";
     //this.body.style.overflow = "hidden";
+    this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
   }
 }
 
@@ -3078,18 +3229,26 @@ return self;
 // ================================================
 // Main (export) class
 const Main = self.Main = class Main {
-  constructor(targetObj, tieName, bodyObj) {
+  constructor(targetObj, tieName, bodyObj,opt) {
     this.$tie = Main.$tie;
     this.window = app.g_window;
     this.targetObj = targetObj;
+    this.targetObj.style.overflow = "hidden";
     if (tieName === undefined || tieName === null) {
       tieName = 'default';
+    }
+    if (!opt){
+      opt = {};
     }
     this.tieName = tieName;
     if (bodyObj === undefined || bodyObj === null){
       bodyObj = app.g_window.document.getElementsByTagName("body")[0];
     }
     this.bodyObj = bodyObj;
+    this.option = opt;
+    this.colorClass = new modules.browser.ColorClass(this.option.color);
+    this.colorClass.setClassBaseName(app.APP_ID);
+    this.colorClass.setClassInstanceName(this.tieName);
     this.storage = new modules.browser.Storage(this,this.window);
     this.history = {
       maxdepth: -1,
@@ -3098,19 +3257,31 @@ const Main = self.Main = class Main {
     this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
     this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
     this.defaultLayer = {
-      bgcolor: "rgba(255,255,255,1)",
-      fgcolor: "rgba(0,0,0,1)",
-      externalColor: "rgba(0,216,216,1)",
       width: this.baseCanvas.width,
       height: this.baseCanvas.height,
     };
+
     this.testWindow = new modules.browser.Window(this,this.targetObj,{
-      enableVScrollbar: null,
-      enableHScrollbar: null,
+      enableVScrollbar: false,
+      enableHScrollbar: false,
       fixsize: false,
       title:"Test Window",
     });
     this.targetObj.appendChild(this.baseCanvas);
+
+    this.testWindow2 = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window2",
+    });
+    this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window3",
+    });
+    //this.testWindow.body.appendChild(this.testWindow2);
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
 

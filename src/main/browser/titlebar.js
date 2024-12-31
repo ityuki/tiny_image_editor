@@ -1,8 +1,8 @@
 const TitleBar = self.TitleBar = class TitleBar {
-  static currentWTitlebarId = 0;
+  static currentTitlebarId = 0;
   constructor(main,parentObj,options) {
-    Layer.currentTitlebarId++;
-    this.id = Layer.currentTitlebarId;
+    TitleBar.currentTitlebarId++;
+    this.id = TitleBar.currentTitlebarId;
     if (!options) {
       options = {};
     }
@@ -10,15 +10,24 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.visible = true;
     this.parentObj = parentObj || main.targetObj;
     this.height = 20;
-    this.bgcolor = options.bgcolor || "rgba(200,200,200,1)";
-    this.fgcolor = options.fgcolor || "rgba(0,0,0,1)";
-    this.hovercolor = options.hovercolor || "rgba(150,150,150,1)";
     this.menuIcon = options.menuIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M144-264v-72h672v72H144Zm0-180v-72h672v72H144Zm0-180v-72h672v72H144Z"/></svg>';
     this.title = options.title || "";
     this.closeIcon = options.closeIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="m291-240-51-51 189-189-189-189 51-51 189 189 189-189 51 51-189 189 189 189-51 51-189-189-189 189Z"/></svg>';
     this.fullscrIcon = options.fullscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M168-192q-29.7 0-50.85-21.16Q96-234.32 96-264.04v-432.24Q96-726 117.15-747T168-768h624q29.7 0 50.85 21.16Q864-725.68 864-695.96v432.24Q864-234 842.85-213T792-192H168Zm0-72h624v-360H168v360Z"/></svg>';
     this.minIcon = options.minIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M288-144v-72h384v72H288Z"/></svg>';
     this.normalscrIcon = options.normalscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M312-312h480v-408H312v408Zm0 72q-29.7 0-50.85-21.15Q240-282.3 240-312v-480q0-29.7 21.15-50.85Q282.3-864 312-864h480q29.7 0 50.85 21.15Q864-821.7 864-792v480q0 29.7-21.15 50.85Q821.7-240 792-240H312ZM168-96q-29.7 0-50.85-21.15Q96-138.3 96-168v-552h72v552h552v72H168Zm144-696v480-480Z"/></svg>';
+
+    if (options.color === undefined) {
+      options.color = {};
+    }
+    this.color = {
+      iconbgcolor: options.color.iconbgcolor || "WindowIconBackgroundColor",
+      iconcolor: options.color.iconcolor || "WindowIconColor",
+      iconhoverbgcolor: options.color.iconhoverbgcolor || "WindowIconHoverBackgroundColor",
+      iconhovercolor: options.color.iconhovercolor || "WindowIconHoverColor",
+      bgcolor: options.color.bgcolor || "WindowTitlebarBackgroundColor",
+      color: options.color.color || "WindowTitlebarColor",
+    };
 
     this.showMenuIcon = options.showMenuIcon || true;
     this.showTitle = options.showTitle || true;
@@ -69,75 +78,26 @@ const TitleBar = self.TitleBar = class TitleBar {
       close: options.onmouseout.close || function(){},
       titlebar: options.onmouseout.titlebar || function(){},
     };
+    if (options.onpointermove === undefined) {
+      options.onpointermove = {};
+    }
+    this.onpointermove = {
+      menu: options.onpointermove.menu || function(){},
+      min: options.onpointermove.min || function(){},
+      normalscr: options.onpointermove.normalscr || function(){},
+      fullscr: options.onpointermove.fullscr || function(){},
+      close: options.onpointermove.close || function(){},
+      titlebar: options.onpointermove.titlebar || function(){},
+    };
     if (options.ondrag === undefined) {
       options.ondrag = {};
     }
-    this.ondrag = {
-      menu: options.ondrag.menu || function(){},
-      min: options.ondrag.min || function(){},
-      normalscr: options.ondrag.normalscr || function(){},
-      fullscr: options.ondrag.fullscr || function(){},
-      close: options.ondrag.close || function(){},
-      titlebar: options.ondrag.titlebar || function(){},
-    };
-    if (options.ondragstart === undefined) {
-      options.ondragstart = {};
-    }
-    this.ondragstart = {
-      menu: options.ondragstart.menu || function(){},
-      min: options.ondragstart.min || function(){},
-      normalscr: options.ondragstart.normalscr || function(){},
-      fullscr: options.ondragstart.fullscr || function(){},
-      close: options.ondragstart.close || function(){},
-      titlebar: options.ondragstart.titlebar || function(){},
-    };
-    if (options.ondragend === undefined) {
-      options.ondragend = {};
-    }
-    this.ondragend = {
-      menu: options.ondragend.menu || function(){},
-      min: options.ondragend.min || function(){},
-      normalscr: options.ondragend.normalscr || function(){},
-      fullscr: options.ondragend.fullscr || function(){},
-      close: options.ondragend.close || function(){},
-      titlebar: options.ondragend.titlebar || function(){},
-    };
-    if (options.ondrop === undefined) {
-      options.ondrop = {};
-    }
-    this.ondrop = {
-      menu: options.ondrop.menu || function(){},
-      min: options.ondrop.min || function(){},
-      normalscr: options.ondrop.normalscr || function(){},
-      fullscr: options.ondrop.fullscr || function(){},
-      close: options.ondrop.close || function(){},
-      titlebar: options.ondrop.titlebar || function(){},
-    };
-    if (options.ongragover === undefined) {
-      options.ongragover = {};
-    }
-    this.ongragover = {
-      menu: options.ongragover.menu || function(){},
-      min: options.ongragover.min || function(){},
-      normalscr: options.ongragover.normalscr || function(){},
-      fullscr: options.ongragover.fullscr || function(){},
-      close: options.ongragover.close || function(){},
-      titlebar: options.ongragover.titlebar || function(){},
-    };
-    this.ondragleave = {
-      menu: options.ondragleave.menu || function(){},
-      min: options.ondragleave.min || function(){},
-      normalscr: options.ondragleave.normalscr || function(){},
-      fullscr: options.ondragleave.fullscr || function(){},
-      close: options.ondragleave.close || function(){},
-      titlebar: options.ondragleave.titlebar || function(){},
-    };
 
     this.titlebar = this.main.window.document.createElement("div");
     this.titlebar.style.width = "100%";
     this.titlebar.style.height = this.height + "px";
-    this.titlebar.style.backgroundColor = this.bgcolor;
-    this.titlebar.style.color = this.fgcolor;
+    this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
     this.titlebar.style.textAlign = "left";
     this.titlebar.style.padding = "0px";
     this.titlebar.style.margin = "0px";
@@ -145,7 +105,7 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titlebar.style.overflow = "hidden";
     this.titlebar.style.boxSizing = "border-box";
     this.titlebar.style.display = "flex";
-    this.titlebar.draggable = true;
+    this.titlebar.draggable = false;
     this.leftitem = this.main.window.document.createElement("div");
     this.leftitem.style.width = "auto";
     this.leftitem.style.height = this.height + "px";
@@ -155,6 +115,7 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.leftitem.style.boxSizing = "border-box";
     this.leftitem.style.textAlign = "left";
     this.leftitem.style.whiteSpace = "nowrap";
+    this.leftitem.draggable = false;
     this.titlebar.appendChild(this.leftitem);
     this.menuitem = this.main.window.document.createElement("div");
     this.menuitem.style.width = "auto";
@@ -164,6 +125,11 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.menuitem.style.overflow = "hidden";
     this.menuitem.style.boxSizing = "border-box";
     this.menuitem.style.textAlign = "left";
+    this.menuitem.draggable = false;
+    this.main.colorClass.setColorClass(this.menuitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.menuitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.menuitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.menuitem,this.color.iconhovercolor,this.id);
     this.menuitem.innerHTML = this.menuIcon;
     this.leftitem.appendChild(this.menuitem);
     this.titleitem = this.main.window.document.createElement("div");
@@ -178,6 +144,9 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titleitem.style.boxSizing = "border-box";
     this.titleitem.style.fontSize = "14px";
     this.titleitem.style.whiteSpace = "nowrap";
+    this.titleitem.draggable = false;
+    this.main.colorClass.setColorClass(this.menuitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.menuitem,this.color.color,this.id);
     this.titleitem.innerHTML = this.title;
     this.titlebar.appendChild(this.titleitem);
     this.rightitem = this.main.window.document.createElement("div");
@@ -191,11 +160,17 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.rightitem.style.marginLeft = "auto";
     this.rightitem.style.whiteSpace = "nowrap";
     this.rightitem.style.display = "flex";
+    this.rightitem.draggable = false;
     this.titlebar.appendChild(this.rightitem);
     this.minitem = this.main.window.document.createElement("div");
     this.minitem.style.width = "auto";
     this.minitem.style.height = this.height + "px";
     this.minitem.style.overflow = "hidden";
+    this.minitem.draggable = false;
+    this.main.colorClass.setColorClass(this.minitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.minitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.minitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.minitem,this.color.iconhovercolor,this.id);
     this.minitem.innerHTML = this.minIcon;
     this.rightitem.appendChild(this.minitem);
     this.normalscritem = this.main.window.document.createElement("div");
@@ -203,38 +178,59 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.normalscritem.style.height = this.height + "px";
     this.normalscritem.style.overflow = "hidden";
     this.normalscritem.innerHTML = this.normalscrIcon;
+    this.normalscritem.draggable = false;
+    this.main.colorClass.setColorClass(this.normalscritem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.normalscritem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.normalscritem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.normalscritem,this.color.iconhovercolor,this.id);
     this.rightitem.appendChild(this.normalscritem);
     this.fullscritem = this.main.window.document.createElement("div");
     this.fullscritem.style.width = "auto";
     this.fullscritem.style.height = this.height + "px";
     this.fullscritem.style.overflow = "hidden";
     this.fullscritem.innerHTML = this.fullscrIcon;
+    this.fullscritem.draggable = false;
+    this.main.colorClass.setColorClass(this.fullscritem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.fullscritem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.fullscritem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.fullscritem,this.color.iconhovercolor,this.id);
     this.rightitem.appendChild(this.fullscritem);
     this.closeitem = this.main.window.document.createElement("div");
     this.closeitem.style.width = "auto";
     this.closeitem.style.height = this.height + "px";
     this.closeitem.style.overflow = "hidden";
+    this.closeitem.draggable = false;
+    this.main.colorClass.setColorClass(this.closeitem,this.color.iconbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.closeitem,this.color.iconcolor,this.id);
+    this.main.colorClass.setClass(this.closeitem,this.color.iconhoverbgcolor,this.id);
+    this.main.colorClass.setClass(this.closeitem,this.color.iconhovercolor,this.id);
     this.closeitem.innerHTML = this.closeIcon;
     this.rightitem.appendChild(this.closeitem);
     if (this.parentObj) {
       this.parentObj.appendChild(this.titlebar);
     }
     this.dblclickTimer = null;
+    const current = this;
     for(let itemName of ["min","normalscr","fullscr","close"]) {
       let item = this[itemName + "item"];
       item.addEventListener("mouseover", () => {
-        item.style.backgroundColor = this.hovercolor;
+        this.main.colorClass.setColorClass(item,current.color.iconhoverbgcolor,current.id);
+        this.main.colorClass.setColorClass(item,current.color.iconhovercolor,current.id);
         this.onmouseover[itemName](itemName);
       });
       item.addEventListener("mouseout", () => {
-        item.style.backgroundColor = this.bgcolor;
+        this.main.colorClass.setColorClass(item,current.color.iconbgcolor,current.id);
+        this.main.colorClass.setColorClass(item,current.color.iconcolor,current.id);
         this.onmouseout[itemName](itemName);
       });
       item.addEventListener("click", () => {
         this.onclick[itemName](itemName);
       });
+      item.addEventListener("pointermove", (e) => {
+        this.onpointermove[itemName](itemName,e);
+      });
     }
-    for(let itemName of ["menu","titlebar"]) {
+    for(let itemName of ["titlebar","menu"]) {
       let item = this[itemName + "item"];
       if (itemName === "titlebar") {
         item = this.titlebar;
@@ -258,23 +254,8 @@ const TitleBar = self.TitleBar = class TitleBar {
           this.onclick[itemName](itemName);
         },300);
       });
-      item.addEventListener("drag", (e) => {
-        this.ondrag[itemName](itemName,e);
-      });
-      item.addEventListener("dragstart", (e) => {
-        this.ondragstart[itemName](itemName,e);
-      });
-      item.addEventListener("dragend", (e) => {
-        this.ondragend[itemName](itemName,e);
-      });
-      item.addEventListener("drop", (e) => {
-        this.ondrop[itemName](itemName,e);
-      });
-      item.addEventListener("dragover", (e) => {
-        this.ongragover[itemName](itemName,e);
-      });
-      item.addEventListener("dragleave", (e) => {
-        this.ondragleave[itemName](itemName,e);
+      item.addEventListener("pointermove", (e) => {
+        this.onpointermove[itemName](itemName,e);
       });
     }
     this.update();

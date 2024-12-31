@@ -1,17 +1,25 @@
 // Main (export) class
 const Main = self.Main = class Main {
-  constructor(targetObj, tieName, bodyObj) {
+  constructor(targetObj, tieName, bodyObj,opt) {
     this.$tie = Main.$tie;
     this.window = app.g_window;
     this.targetObj = targetObj;
+    this.targetObj.style.overflow = "hidden";
     if (tieName === undefined || tieName === null) {
       tieName = 'default';
+    }
+    if (!opt){
+      opt = {};
     }
     this.tieName = tieName;
     if (bodyObj === undefined || bodyObj === null){
       bodyObj = app.g_window.document.getElementsByTagName("body")[0];
     }
     this.bodyObj = bodyObj;
+    this.option = opt;
+    this.colorClass = new modules.browser.ColorClass(this.option.color);
+    this.colorClass.setClassBaseName(app.APP_ID);
+    this.colorClass.setClassInstanceName(this.tieName);
     this.storage = new modules.browser.Storage(this,this.window);
     this.history = {
       maxdepth: -1,
@@ -20,19 +28,31 @@ const Main = self.Main = class Main {
     this.baseCanvas.width = this.targetObj.getBoundingClientRect().width;
     this.baseCanvas.height = this.targetObj.getBoundingClientRect().height;
     this.defaultLayer = {
-      bgcolor: "rgba(255,255,255,1)",
-      fgcolor: "rgba(0,0,0,1)",
-      externalColor: "rgba(0,216,216,1)",
       width: this.baseCanvas.width,
       height: this.baseCanvas.height,
     };
+
     this.testWindow = new modules.browser.Window(this,this.targetObj,{
-      enableVScrollbar: null,
-      enableHScrollbar: null,
+      enableVScrollbar: false,
+      enableHScrollbar: false,
       fixsize: false,
       title:"Test Window",
     });
     this.targetObj.appendChild(this.baseCanvas);
+
+    this.testWindow2 = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window2",
+    });
+    this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window3",
+    });
+    //this.testWindow.body.appendChild(this.testWindow2);
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
 
