@@ -521,8 +521,10 @@ const Default = self.Default = {
   WindowIconColor: "rgba(95,99,104,1)",
   WindowIconHoverBackgroundColor: "rgba(150,150,150,1)",
   WindowIconHoverColor: "rgba(95,99,104,1)",
-  WindowTitlebarBackgroundColor: "rgba(200,200,200,1)",
+  WindowTitlebarBackgroundColor: "rgba(220,220,220,1)",
   WindowTitlebarColor: "rgba(0,0,0,1)",
+  WindowTitlebarTopBackgroundColor: "rgba(200,200,200,1)",
+  WindowTitlebarTopColor: "rgba(0,0,0,0.8)",
   WindowBorderColor: "rgba(0,0,0,1)",
   WindowBackgroundColor: "rgba(255,255,255,1)",
   WindowTooltipBackgroundColor: "rgba(0,0,0,0.8)",
@@ -1873,6 +1875,8 @@ const TitleBar = self.TitleBar = class TitleBar {
       iconhovercolor: options.color.iconhovercolor || "WindowIconHoverColor",
       bgcolor: options.color.bgcolor || "WindowTitlebarBackgroundColor",
       color: options.color.color || "WindowTitlebarColor",
+      topbgcolor: options.color.topbgcolor || "WindowTitlebarTopBackgroundColor",
+      topcolor: options.color.topcolor || "WindowTitlebarTopColor",
     };
 
     this.showMenuIcon = options.showMenuIcon || true;
@@ -1944,6 +1948,8 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titlebar.style.height = this.height + "px";
     this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
     this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
+    this.main.colorClass.setClass(this.titlebar,this.color.topbgcolor,this.id);
+    this.main.colorClass.setClass(this.titlebar,this.color.topcolor,this.id);
     this.titlebar.style.textAlign = "left";
     this.titlebar.style.padding = "0px";
     this.titlebar.style.margin = "0px";
@@ -1991,8 +1997,8 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titleitem.style.fontSize = "14px";
     this.titleitem.style.whiteSpace = "nowrap";
     this.titleitem.draggable = false;
-    this.main.colorClass.setColorClass(this.menuitem,this.color.bgcolor,this.id);
-    this.main.colorClass.setColorClass(this.menuitem,this.color.color,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.color,this.id);
     this.titleitem.innerHTML = this.title;
     this.titlebar.appendChild(this.titleitem);
     this.rightitem = this.main.window.document.createElement("div");
@@ -2106,6 +2112,18 @@ const TitleBar = self.TitleBar = class TitleBar {
     }
     this.update();
   }
+  setTop(){
+    this.main.colorClass.setColorClass(this.titleitem,this.color.topbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.topcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.topbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.topcolor,this.id);
+  }
+  unsetTop(){
+    this.main.colorClass.setColorClass(this.titleitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.color,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
+  }
   update() {
     if (!this.visible) {
       this.titlebar.style.display = "none";
@@ -2165,6 +2183,7 @@ const Window = self.Window = class Window {
     this.parentObj = parentObj || null;
     this.mode = options.mode || Window.WindowMode.Normal;
     this.childSmallWindow = [];
+    this.childWindow = [];
     this.window = this.main.window.document.createElement("div");
     if (options.fixsize) {
       this.window.style.resize = "none";
@@ -2184,6 +2203,7 @@ const Window = self.Window = class Window {
       this.window.boxSize = "border-box";
       if (parentObj instanceof Window) {
         this.parentObj.body.appendChild(this.window);
+        this.parentObj.addChildWindow(this);
       }else{
         this.parentObj.appendChild(this.window);
       }
@@ -2320,6 +2340,9 @@ const Window = self.Window = class Window {
         menu: function() {
           console.log("Menu");
         },
+        titlebar: function() {
+          current.setTop();
+        },
       },
       ondblclick: {
         titlebar: function() {
@@ -2376,6 +2399,9 @@ const Window = self.Window = class Window {
       },
     });
     this.bodybarria = this.main.window.document.createElement("div");
+    this.bodybarria.addEventListener("click",function(e){
+      current.setTop();
+    });
     this.body = this.main.window.document.createElement("div");
     if (options.enableVScrollbar) {
       if (options.enableHScrollbar) {
@@ -2430,6 +2456,24 @@ const Window = self.Window = class Window {
     this.body.style.left = "0px";
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
+  }
+  addChildWindow(window) {
+    this.childWindow.push({window:window,zIndex:this.childWindow.length});
+  }
+  removeChildWindow(window) {
+    this.childWindow = this.childWindow.filter(e => e.window !== window);
+  }
+  setTop(){
+    if (this.parentObj instanceof Window) {
+      this.parentObj.childWindow = this.parentObj.childWindow.filter(e => e.window !== this).sort((a,b) => a.zIndex - b.zIndex);
+      this.parentObj.childWindow.push({window:this,zIndex:this.childWindow.length});
+      for(let i=0;i<this.parentObj.childWindow.length;i++){
+        this.parentObj.childWindow[i].window.window.style.zIndex = i;
+        this.parentObj.childWindow[i].window.titlebarObj.unsetTop();
+        this.parentObj.childWindow[i].zIndex = i;      
+      }
+      this.parentObj.childWindow[this.parentObj.childWindow.length-1].window.titlebarObj.setTop();
+    }
   }
 }
 
@@ -3266,6 +3310,8 @@ const Main = self.Main = class Main {
       enableHScrollbar: false,
       fixsize: false,
       title:"Test Window",
+      width: 800 + "px",
+      height: 600 + "px",
     });
     this.targetObj.appendChild(this.baseCanvas);
 
@@ -3274,12 +3320,18 @@ const Main = self.Main = class Main {
       enableHScrollbar: null,
       fixsize: false,
       title:"Test Window2",
+      width: 640 + "px",
+      height: 480 + "px",
     });
     this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
       enableVScrollbar: null,
       enableHScrollbar: null,
       fixsize: false,
       title:"Test Window3",
+      width: 640 + "px",
+      height: 480 + "px",
+      top: 20 + "px",
+      left: 20 + "px",
     });
     //this.testWindow.body.appendChild(this.testWindow2);
 

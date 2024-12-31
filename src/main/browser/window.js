@@ -17,6 +17,7 @@ const Window = self.Window = class Window {
     this.parentObj = parentObj || null;
     this.mode = options.mode || Window.WindowMode.Normal;
     this.childSmallWindow = [];
+    this.childWindow = [];
     this.window = this.main.window.document.createElement("div");
     if (options.fixsize) {
       this.window.style.resize = "none";
@@ -36,6 +37,7 @@ const Window = self.Window = class Window {
       this.window.boxSize = "border-box";
       if (parentObj instanceof Window) {
         this.parentObj.body.appendChild(this.window);
+        this.parentObj.addChildWindow(this);
       }else{
         this.parentObj.appendChild(this.window);
       }
@@ -172,6 +174,9 @@ const Window = self.Window = class Window {
         menu: function() {
           console.log("Menu");
         },
+        titlebar: function() {
+          current.setTop();
+        },
       },
       ondblclick: {
         titlebar: function() {
@@ -228,6 +233,9 @@ const Window = self.Window = class Window {
       },
     });
     this.bodybarria = this.main.window.document.createElement("div");
+    this.bodybarria.addEventListener("click",function(e){
+      current.setTop();
+    });
     this.body = this.main.window.document.createElement("div");
     if (options.enableVScrollbar) {
       if (options.enableHScrollbar) {
@@ -282,5 +290,23 @@ const Window = self.Window = class Window {
     this.body.style.left = "0px";
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
+  }
+  addChildWindow(window) {
+    this.childWindow.push({window:window,zIndex:this.childWindow.length});
+  }
+  removeChildWindow(window) {
+    this.childWindow = this.childWindow.filter(e => e.window !== window);
+  }
+  setTop(){
+    if (this.parentObj instanceof Window) {
+      this.parentObj.childWindow = this.parentObj.childWindow.filter(e => e.window !== this).sort((a,b) => a.zIndex - b.zIndex);
+      this.parentObj.childWindow.push({window:this,zIndex:this.childWindow.length});
+      for(let i=0;i<this.parentObj.childWindow.length;i++){
+        this.parentObj.childWindow[i].window.window.style.zIndex = i;
+        this.parentObj.childWindow[i].window.titlebarObj.unsetTop();
+        this.parentObj.childWindow[i].zIndex = i;      
+      }
+      this.parentObj.childWindow[this.parentObj.childWindow.length-1].window.titlebarObj.setTop();
+    }
   }
 }

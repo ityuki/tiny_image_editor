@@ -27,6 +27,8 @@ const TitleBar = self.TitleBar = class TitleBar {
       iconhovercolor: options.color.iconhovercolor || "WindowIconHoverColor",
       bgcolor: options.color.bgcolor || "WindowTitlebarBackgroundColor",
       color: options.color.color || "WindowTitlebarColor",
+      topbgcolor: options.color.topbgcolor || "WindowTitlebarTopBackgroundColor",
+      topcolor: options.color.topcolor || "WindowTitlebarTopColor",
     };
 
     this.showMenuIcon = options.showMenuIcon || true;
@@ -98,6 +100,8 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titlebar.style.height = this.height + "px";
     this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
     this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
+    this.main.colorClass.setClass(this.titlebar,this.color.topbgcolor,this.id);
+    this.main.colorClass.setClass(this.titlebar,this.color.topcolor,this.id);
     this.titlebar.style.textAlign = "left";
     this.titlebar.style.padding = "0px";
     this.titlebar.style.margin = "0px";
@@ -145,8 +149,8 @@ const TitleBar = self.TitleBar = class TitleBar {
     this.titleitem.style.fontSize = "14px";
     this.titleitem.style.whiteSpace = "nowrap";
     this.titleitem.draggable = false;
-    this.main.colorClass.setColorClass(this.menuitem,this.color.bgcolor,this.id);
-    this.main.colorClass.setColorClass(this.menuitem,this.color.color,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.color,this.id);
     this.titleitem.innerHTML = this.title;
     this.titlebar.appendChild(this.titleitem);
     this.rightitem = this.main.window.document.createElement("div");
@@ -259,6 +263,18 @@ const TitleBar = self.TitleBar = class TitleBar {
       });
     }
     this.update();
+  }
+  setTop(){
+    this.main.colorClass.setColorClass(this.titleitem,this.color.topbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.topcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.topbgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.topcolor,this.id);
+  }
+  unsetTop(){
+    this.main.colorClass.setColorClass(this.titleitem,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titleitem,this.color.color,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.bgcolor,this.id);
+    this.main.colorClass.setColorClass(this.titlebar,this.color.color,this.id);
   }
   update() {
     if (!this.visible) {

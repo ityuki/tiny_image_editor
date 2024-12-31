@@ -37,6 +37,8 @@ const Main = self.Main = class Main {
       enableHScrollbar: false,
       fixsize: false,
       title:"Test Window",
+      width: 800 + "px",
+      height: 600 + "px",
     });
     this.targetObj.appendChild(this.baseCanvas);
 
@@ -45,12 +47,18 @@ const Main = self.Main = class Main {
       enableHScrollbar: null,
       fixsize: false,
       title:"Test Window2",
+      width: 640 + "px",
+      height: 480 + "px",
     });
     this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
       enableVScrollbar: null,
       enableHScrollbar: null,
       fixsize: false,
       title:"Test Window3",
+      width: 640 + "px",
+      height: 480 + "px",
+      top: 20 + "px",
+      left: 20 + "px",
     });
     //this.testWindow.body.appendChild(this.testWindow2);
 
