@@ -1,4 +1,4 @@
-const BaseLayer = self.BaseLayer = class BaseLayer {
+const Layer = self.Layer = class Layer {
   static LayerTransformType = {
     Position: 1,
     Angle: 2,
@@ -7,8 +7,8 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
 
   static currentLayerId = 0;
   constructor(main,width,height,opt) {
-    BaseLayer.currentLayerId++;
-    this.id = BaseLayer.currentLayerId;
+    Layer.currentLayerId++;
+    this.id = Layer.currentLayerId;
     if (!opt) {
       opt = {};
     }
@@ -22,7 +22,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     this.position = { x: 0, y: 0 };
     this.angle = 0;
     this.scale = 1;
-    this.canvas = new parent.Canvas(main,width,height);
+    this.canvas = new Canvas(main,width,height);
     this.visible = true;
     this.syncPositionLayers = [];
     this.syncAngleLayers = [];
@@ -164,7 +164,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       return topLayers;
     }
     for (let layer of this.aboveLayers) {
-      if (layer instanceof BaseLayer) {
+      if (layer instanceof Layer) {
         topLayers = topLayers.concat(layer.getTopLayers());
       } else {
         // DO NOTHING
@@ -186,7 +186,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
     }
     let destHTMLCanvas = null;
-    if (destCanvas instanceof parent.Canvas) {
+    if (destCanvas instanceof Canvas) {
       destHTMLCanvas = destCanvas.getHTMLCanvas();
     }else if (destCanvas instanceof HTMLCanvasElement){
       destHTMLCanvas = destCanvas;
@@ -208,7 +208,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
   }
   outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
-      if (layer instanceof BaseLayer) {
+      if (layer instanceof Layer) {
         layer.outputCurrentLayer(canvas,opt);
       } else {
         // DO NOTHING
@@ -222,12 +222,12 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     if (opt.clearCanvas) {
       let color = [255,255,255,0];
       if (opt.clearColor) {
-        color = parent.Color.colorToArray(opt.clearColor);
+        color = Color.colorToArray(opt.clearColor);
       }
-      if (canvas instanceof parent.Canvas) {
+      if (canvas instanceof Canvas) {
         canvas.fill(color);
       }else if (canvas instanceof HTMLCanvasElement){
-        const colorAry = parent.Color.colorToArray(color);
+        const colorAry = Color.colorToArray(color);
         const context = canvas.getContext('2d');
         const contextimg = context.getImageData(0,0,canvas.width,canvas.height);
         for(let i = 0; i < contextimg.data.length; i += 4){
@@ -249,7 +249,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     if (opt.clearCanvas) {
       let color = [255,255,255,0];
       if (opt.clearColor) {
-        color = parent.Color.colorToArray(opt.clearColor);
+        color = Color.colorToArray(opt.clearColor);
       }
       this.clearCanvas(canvas, opt);
     }
@@ -257,7 +257,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       let crect = {
         x:0,y:0,w:0,h:0
       };
-      if (canvas instanceof parent.Canvas) {
+      if (canvas instanceof Canvas) {
         crect = canvas.getRect();
       }else if (canvas instanceof HTMLCanvasElement){
         crect.w = canvas.width;
@@ -277,7 +277,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }
       //crect.w += Math.abs(this.position.x);
       //crect.h += Math.abs(this.position.y);
-      const tcanvas = new parent.Canvas(this.main,crect.w,crect.h);
+      const tcanvas = new Canvas(this.main,crect.w,crect.h);
       if (this.writeClip === true) {
         tcanvas.resizeRect(0,0,this.canvas.getRect().w,this.canvas.getRect().h);
       }
@@ -289,7 +289,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
       }else {
         const ow = tcanvas.getRect().w;
         const oh = tcanvas.getRect().h;
-        tcanvas.setResizeType(parent.Canvas.ResizeType.Center);
+        tcanvas.setResizeType(Canvas.ResizeType.Center);
         tcanvas.resize(s*2,s*2);
         this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},1,{});
         tcanvas.rotateCenter(this.angle);
@@ -332,7 +332,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     if (this.belowLayers.length > 0){
       for (let layer of this.belowLayers){
-        if (layer instanceof BaseLayer){
+        if (layer instanceof Layer){
           const r = layer.getLayerList(target,exceptList);
           if (r != null){
             if (exceptList.indexOf(this) !== -1){
@@ -363,7 +363,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     let r = [];
     if (this.angle !== 0){
       r.push({
-        type: BaseLayer.LayerTransformType.Angle,
+        type: Layer.LayerTransformType.Angle,
         x: this.canvas.getRect().w/2,
         y: this.canvas.getRect().h/2,
         angle: this.angle,
@@ -372,7 +372,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     if (this.position.x !== 0 || this.position.y !== 0){
       r.push({
-        type: BaseLayer.LayerTransformType.Position,
+        type: Layer.LayerTransformType.Position,
         x: this.position.x,
         y: this.position.y,
         layer: this,
@@ -380,7 +380,7 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     if (this.scale !== 1){
       r.push({
-        type: BaseLayer.LayerTransformType.Scale,
+        type: Layer.LayerTransformType.Scale,
         scale: this.scale,
         layer: this,
       });
@@ -400,18 +400,18 @@ const BaseLayer = self.BaseLayer = class BaseLayer {
     }
     return transformList;
   }
-  testFillRect(baseLayer,exceptList){
-    const transformList = this.getLayerTransformList(baseLayer.getLayerList(this,exceptList));
+  testFillRect(Layer,exceptList){
+    const transformList = this.getLayerTransformList(Layer.getLayerList(this,exceptList));
     const ctx = this.getCanvas().getHTMLCanvas().getContext('2d');
     ctx.save();
     for (let transform of transformList){
-      if (transform.type === BaseLayer.LayerTransformType.Position){
+      if (transform.type === Layer.LayerTransformType.Position){
         ctx.translate(-transform.x,-transform.y);
-      }else if (transform.type === BaseLayer.LayerTransformType.Angle){
+      }else if (transform.type === Layer.LayerTransformType.Angle){
         ctx.translate(transform.x,transform.y);
         ctx.rotate(-transform.angle * Math.PI / 180);
         ctx.translate(-transform.x,-transform.y);
-      }else if (transform.type === BaseLayer.LayerTransformType.Scale){
+      }else if (transform.type === Layer.LayerTransformType.Scale){
         ctx.scale(1/transform.scale,1/transform.scale);
       }
     }

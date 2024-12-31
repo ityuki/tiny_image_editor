@@ -28,20 +28,20 @@ const Main = self.Main = class Main {
     };
     this.targetObj.appendChild(this.baseCanvas);
 
-    this.viewerLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
 
-    this.clearpatternLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.clearpatternLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.clearpatternLayer.insertLastLayer(this.viewerLayer);
 
-    this.baseLayer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height,{writeClip: true});
+    this.baseLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height,{writeClip: true});
     this.baseLayer.insertLastLayer(this.clearpatternLayer);
     this.baseLayer.addSyncPositionLayer(this.clearpatternLayer);
     this.baseLayer.addSyncAngleLayer(this.clearpatternLayer);
     this.baseLayer.addSyncScaleLayer(this.clearpatternLayer);
 
-    this.layer = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.layer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer);
-    this.layer2 = new modules.browser.layer.BaseLayer(this,this.defaultLayer.width,this.defaultLayer.height);
+    this.layer2 = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer2);
 
     modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer.canvas);
