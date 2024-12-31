@@ -26,6 +26,12 @@ const Main = self.Main = class Main {
       width: this.baseCanvas.width,
       height: this.baseCanvas.height,
     };
+    this.testWindow = new modules.browser.Window(this,this.targetObj,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window",
+    });
     this.targetObj.appendChild(this.baseCanvas);
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);

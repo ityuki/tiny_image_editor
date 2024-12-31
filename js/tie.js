@@ -1671,6 +1671,618 @@ const Layer = self.Layer = class Layer {
 }
 
 // ================================================
+// module: browser , from: titlebar.js
+// ================================================
+const TitleBar = self.TitleBar = class TitleBar {
+  static currentWTitlebarId = 0;
+  constructor(main,parentObj,options) {
+    Layer.currentTitlebarId++;
+    this.id = Layer.currentTitlebarId;
+    if (!options) {
+      options = {};
+    }
+    this.main = main;
+    this.visible = true;
+    this.parentObj = parentObj || main.targetObj;
+    this.height = 20;
+    this.bgcolor = options.bgcolor || "rgba(200,200,200,1)";
+    this.fgcolor = options.fgcolor || "rgba(0,0,0,1)";
+    this.hovercolor = options.hovercolor || "rgba(150,150,150,1)";
+    this.menuIcon = options.menuIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M144-264v-72h672v72H144Zm0-180v-72h672v72H144Zm0-180v-72h672v72H144Z"/></svg>';
+    this.title = options.title || "";
+    this.closeIcon = options.closeIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="m291-240-51-51 189-189-189-189 51-51 189 189 189-189 51 51-189 189 189 189-51 51-189-189-189 189Z"/></svg>';
+    this.fullscrIcon = options.fullscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M168-192q-29.7 0-50.85-21.16Q96-234.32 96-264.04v-432.24Q96-726 117.15-747T168-768h624q29.7 0 50.85 21.16Q864-725.68 864-695.96v432.24Q864-234 842.85-213T792-192H168Zm0-72h624v-360H168v360Z"/></svg>';
+    this.minIcon = options.minIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M288-144v-72h384v72H288Z"/></svg>';
+    this.normalscrIcon = options.normalscrIcon || '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368"><path d="M312-312h480v-408H312v408Zm0 72q-29.7 0-50.85-21.15Q240-282.3 240-312v-480q0-29.7 21.15-50.85Q282.3-864 312-864h480q29.7 0 50.85 21.15Q864-821.7 864-792v480q0 29.7-21.15 50.85Q821.7-240 792-240H312ZM168-96q-29.7 0-50.85-21.15Q96-138.3 96-168v-552h72v552h552v72H168Zm144-696v480-480Z"/></svg>';
+
+    this.showMenuIcon = options.showMenuIcon || true;
+    this.showTitle = options.showTitle || true;
+    this.showCloseIcon = options.showCloseIcon || true;
+    this.showFullscrIcon = options.showFullscrIcon || true;
+    this.showMinIcon = options.showMinIcon || true;
+    if (options.onclick === undefined) {
+      options.onclick = {};
+    }
+    this.onclick = {
+      menu: options.onclick.menu || function(){},
+      min: options.onclick.min || function(){},
+      normalscr: options.onclick.normalscr || function(){},
+      fullscr: options.onclick.fullscr || function(){},
+      close: options.onclick.close || function(){},
+      titlebar: options.onclick.titlebar || function(){},
+    };
+    if (options.ondblclick === undefined) {
+      options.ondblclick = {};
+    }
+    this.ondblclick = {
+      menu: options.ondblclick.menu || function(){},
+      min: options.ondblclick.min || function(){},
+      normalscr: options.ondblclick.normalscr || function(){},
+      fullscr: options.ondblclick.fullscr || function(){},
+      close: options.ondblclick.close || function(){},
+      titlebar: options.ondblclick.titlebar || function(){},
+    };
+    if (options.onmouseover === undefined) {
+      options.onmouseover = {};
+    }
+    this.onmouseover = {
+      menu: options.onmouseover.menu || function(){},
+      min: options.onmouseover.min || function(){},
+      normalscr: options.onmouseover.normalscr || function(){},
+      fullscr: options.onmouseover.fullscr || function(){},
+      close: options.onmouseover.close || function(){},
+      titlebar: options.onmouseover.titlebar || function(){},
+    };
+    if (options.onmouseout === undefined) {
+      options.onmouseout = {};
+    }
+    this.onmouseout = {
+      menu: options.onmouseout.menu || function(){},
+      min: options.onmouseout.min || function(){},
+      normalscr: options.onmouseout.normalscr || function(){},
+      fullscr: options.onmouseout.fullscr || function(){},
+      close: options.onmouseout.close || function(){},
+      titlebar: options.onmouseout.titlebar || function(){},
+    };
+    if (options.ondrag === undefined) {
+      options.ondrag = {};
+    }
+    this.ondrag = {
+      menu: options.ondrag.menu || function(){},
+      min: options.ondrag.min || function(){},
+      normalscr: options.ondrag.normalscr || function(){},
+      fullscr: options.ondrag.fullscr || function(){},
+      close: options.ondrag.close || function(){},
+      titlebar: options.ondrag.titlebar || function(){},
+    };
+    if (options.ondragstart === undefined) {
+      options.ondragstart = {};
+    }
+    this.ondragstart = {
+      menu: options.ondragstart.menu || function(){},
+      min: options.ondragstart.min || function(){},
+      normalscr: options.ondragstart.normalscr || function(){},
+      fullscr: options.ondragstart.fullscr || function(){},
+      close: options.ondragstart.close || function(){},
+      titlebar: options.ondragstart.titlebar || function(){},
+    };
+    if (options.ondragend === undefined) {
+      options.ondragend = {};
+    }
+    this.ondragend = {
+      menu: options.ondragend.menu || function(){},
+      min: options.ondragend.min || function(){},
+      normalscr: options.ondragend.normalscr || function(){},
+      fullscr: options.ondragend.fullscr || function(){},
+      close: options.ondragend.close || function(){},
+      titlebar: options.ondragend.titlebar || function(){},
+    };
+    if (options.ondrop === undefined) {
+      options.ondrop = {};
+    }
+    this.ondrop = {
+      menu: options.ondrop.menu || function(){},
+      min: options.ondrop.min || function(){},
+      normalscr: options.ondrop.normalscr || function(){},
+      fullscr: options.ondrop.fullscr || function(){},
+      close: options.ondrop.close || function(){},
+      titlebar: options.ondrop.titlebar || function(){},
+    };
+    if (options.ongragover === undefined) {
+      options.ongragover = {};
+    }
+    this.ongragover = {
+      menu: options.ongragover.menu || function(){},
+      min: options.ongragover.min || function(){},
+      normalscr: options.ongragover.normalscr || function(){},
+      fullscr: options.ongragover.fullscr || function(){},
+      close: options.ongragover.close || function(){},
+      titlebar: options.ongragover.titlebar || function(){},
+    };
+    this.ondragleave = {
+      menu: options.ondragleave.menu || function(){},
+      min: options.ondragleave.min || function(){},
+      normalscr: options.ondragleave.normalscr || function(){},
+      fullscr: options.ondragleave.fullscr || function(){},
+      close: options.ondragleave.close || function(){},
+      titlebar: options.ondragleave.titlebar || function(){},
+    };
+
+    this.titlebar = this.main.window.document.createElement("div");
+    this.titlebar.style.width = "100%";
+    this.titlebar.style.height = this.height + "px";
+    this.titlebar.style.backgroundColor = this.bgcolor;
+    this.titlebar.style.color = this.fgcolor;
+    this.titlebar.style.textAlign = "left";
+    this.titlebar.style.padding = "0px";
+    this.titlebar.style.margin = "0px";
+    this.titlebar.style.border = "0px";
+    this.titlebar.style.overflow = "hidden";
+    this.titlebar.style.boxSizing = "border-box";
+    this.titlebar.style.display = "flex";
+    this.titlebar.draggable = true;
+    this.leftitem = this.main.window.document.createElement("div");
+    this.leftitem.style.width = "auto";
+    this.leftitem.style.height = this.height + "px";
+    this.leftitem.style.padding = "0px";
+    this.leftitem.style.border = "0px";
+    this.leftitem.style.overflow = "hidden";
+    this.leftitem.style.boxSizing = "border-box";
+    this.leftitem.style.textAlign = "left";
+    this.leftitem.style.whiteSpace = "nowrap";
+    this.titlebar.appendChild(this.leftitem);
+    this.menuitem = this.main.window.document.createElement("div");
+    this.menuitem.style.width = "auto";
+    this.menuitem.style.height = this.height + "px";
+    this.menuitem.style.padding = "0px";
+    this.menuitem.style.border = "0px";
+    this.menuitem.style.overflow = "hidden";
+    this.menuitem.style.boxSizing = "border-box";
+    this.menuitem.style.textAlign = "left";
+    this.menuitem.innerHTML = this.menuIcon;
+    this.leftitem.appendChild(this.menuitem);
+    this.titleitem = this.main.window.document.createElement("div");
+    this.titleitem.style.width = "auto";
+    this.titleitem.style.height = this.height + "px";
+    this.titleitem.style.padding = "0px";
+    this.titleitem.style.border = "0px";
+    this.titleitem.style.textAlign = "left";
+    this.titleitem.style.marginLeft = "2px";
+    this.titleitem.style.marginRight = "2px";
+    this.titleitem.style.overflow = "hidden";
+    this.titleitem.style.boxSizing = "border-box";
+    this.titleitem.style.fontSize = "14px";
+    this.titleitem.style.whiteSpace = "nowrap";
+    this.titleitem.innerHTML = this.title;
+    this.titlebar.appendChild(this.titleitem);
+    this.rightitem = this.main.window.document.createElement("div");
+    this.rightitem.style.width = "auto";
+    this.rightitem.style.height = this.height + "px";
+    this.rightitem.style.padding = "0px";
+    this.rightitem.style.border = "0px";
+    this.rightitem.style.overflow = "hidden";
+    this.rightitem.style.boxSizing = "border-box";
+    this.rightitem.style.textAlign = "right";
+    this.rightitem.style.marginLeft = "auto";
+    this.rightitem.style.whiteSpace = "nowrap";
+    this.rightitem.style.display = "flex";
+    this.titlebar.appendChild(this.rightitem);
+    this.minitem = this.main.window.document.createElement("div");
+    this.minitem.style.width = "auto";
+    this.minitem.style.height = this.height + "px";
+    this.minitem.style.overflow = "hidden";
+    this.minitem.innerHTML = this.minIcon;
+    this.rightitem.appendChild(this.minitem);
+    this.normalscritem = this.main.window.document.createElement("div");
+    this.normalscritem.style.width = "auto";
+    this.normalscritem.style.height = this.height + "px";
+    this.normalscritem.style.overflow = "hidden";
+    this.normalscritem.innerHTML = this.normalscrIcon;
+    this.rightitem.appendChild(this.normalscritem);
+    this.fullscritem = this.main.window.document.createElement("div");
+    this.fullscritem.style.width = "auto";
+    this.fullscritem.style.height = this.height + "px";
+    this.fullscritem.style.overflow = "hidden";
+    this.fullscritem.innerHTML = this.fullscrIcon;
+    this.rightitem.appendChild(this.fullscritem);
+    this.closeitem = this.main.window.document.createElement("div");
+    this.closeitem.style.width = "auto";
+    this.closeitem.style.height = this.height + "px";
+    this.closeitem.style.overflow = "hidden";
+    this.closeitem.innerHTML = this.closeIcon;
+    this.rightitem.appendChild(this.closeitem);
+    if (this.parentObj) {
+      this.parentObj.appendChild(this.titlebar);
+    }
+    this.dblclickTimer = null;
+    for(let itemName of ["min","normalscr","fullscr","close"]) {
+      let item = this[itemName + "item"];
+      item.addEventListener("mouseover", () => {
+        item.style.backgroundColor = this.hovercolor;
+        this.onmouseover[itemName](itemName);
+      });
+      item.addEventListener("mouseout", () => {
+        item.style.backgroundColor = this.bgcolor;
+        this.onmouseout[itemName](itemName);
+      });
+      item.addEventListener("click", () => {
+        this.onclick[itemName](itemName);
+      });
+    }
+    for(let itemName of ["menu","titlebar"]) {
+      let item = this[itemName + "item"];
+      if (itemName === "titlebar") {
+        item = this.titlebar;
+      }
+      item.addEventListener("mouseover", () => {
+        this.onmouseover[itemName](itemName);
+      });
+      item.addEventListener("mouseout", () => {
+        this.onmouseout[itemName](itemName);
+      });
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (this.dblclickTimer !== null){
+          clearTimeout(this.dblclickTimer);
+          this.dblclickTimer = null;
+          this.ondblclick[itemName](itemName);
+          return;          
+        }
+        this.dblclickTimer = setTimeout(() => {
+          this.dblclickTimer = null;
+          this.onclick[itemName](itemName);
+        },300);
+      });
+      item.addEventListener("drag", (e) => {
+        this.ondrag[itemName](itemName,e);
+      });
+      item.addEventListener("dragstart", (e) => {
+        this.ondragstart[itemName](itemName,e);
+      });
+      item.addEventListener("dragend", (e) => {
+        this.ondragend[itemName](itemName,e);
+      });
+      item.addEventListener("drop", (e) => {
+        this.ondrop[itemName](itemName,e);
+      });
+      item.addEventListener("dragover", (e) => {
+        this.ongragover[itemName](itemName,e);
+      });
+      item.addEventListener("dragleave", (e) => {
+        this.ondragleave[itemName](itemName,e);
+      });
+    }
+    this.update();
+  }
+  update() {
+    if (!this.visible) {
+      this.titlebar.style.display = "none";
+    } else {
+      this.titlebar.style.display = "flex";
+    }
+    if (!this.showMenuIcon) {
+      this.menuitem.style.display = "none";
+    }else{
+      this.menuitem.style.display = "block";
+    }
+    this.titleitem.innerHTML = this.title;
+    if (!this.showTitle) {
+      this.titleitem.style.display = "none";
+    }else{
+      this.titleitem.style.display = "block";
+    }
+    if (!this.showMinIcon) {
+      this.minitem.style.display = "none";
+    } else {
+      this.minitem.style.display = "block";
+    }
+    if (!this.showFullscrIcon) {
+      this.normalscritem.style.display = "block";
+      this.fullscritem.style.display = "none";
+    }else{
+      this.normalscritem.style.display = "none";
+      this.fullscritem.style.display = "block";
+    }
+    if (!this.showCloseIcon) {
+      this.closeitem.style.display = "none";
+    }else{
+      this.closeitem.style.display = "block";
+    }
+  }
+}
+
+// ================================================
+// module: browser , from: window.js
+// ================================================
+const Window = self.Window = class Window {
+  static WindowMode = {
+    Normal: 0,
+    FullScreen: 1,
+    Minimized: 2,
+  };
+  static currentWindowId = 0;
+  constructor(main,parentObj,options) {
+    Layer.currentWindowId++;
+    this.id = Layer.currentWindowId;
+    if (!options) {
+      options = {};
+    }
+    this.main = main;
+    this.options = options;
+    this.visible = true;
+    this.parentObj = parentObj || null;
+    this.mode = options.mode || Window.WindowMode.Normal;
+    this.window = this.main.window.document.createElement("div");
+    if (options.fixsize) {
+      this.window.style.resize = "none";
+    }else{
+      this.window.style.resize = "both";
+    }
+    this.window.style.overflow = "hidden";
+    this.window.style.width = options.width || "200px";
+    this.window.style.height = options.height || "100px";
+    this.window.style.top = options.top || "0px";
+    this.window.style.left = options.left || "0px";
+    this.window.style.borderWidth = "1px";
+    this.window.style.borderColor = "rgba(0,0,0,1)";
+    this.window.style.borderStyle = "solid";
+    if (parentObj) {
+      this.window.style.position = "absolute";
+      this.parentObj.appendChild(this.window);
+    }else{
+      this.window.style.position = "fixed";
+      this.main.window.document.body.appendChild(this.window);
+    }
+    this.titlebar = this.main.window.document.createElement("div");
+    this.tooltip = this.main.window.document.createElement("div");
+    this.tooltip.style.position = "fixed";
+    this.tooltip.style.display = "none";
+    this.tooltip.style.backgroundColor = "rgba(0,0,0,0.8)";
+    this.tooltip.style.color = "rgba(255,255,255,1)";
+    this.tooltip.style.padding = "4px";
+    this.tooltip.style.borderRadius = "4px";
+    this.tooltip.style.zIndex = "1000";
+    this.tooltip.style.boxShadow = "0px 0px 4px rgba(0,0,0,0.8)";
+    this.tooltip.style.transition = "opacity 0.2s";
+    this.window.appendChild(this.tooltip);
+    this.window.appendChild(this.titlebar);
+    this.original = {
+      width: this.window.style.width,
+      height: this.window.style.height,
+      top: this.window.style.top,
+      left: this.window.style.left,
+      lastMode: Window.WindowMode.Normal,
+    };
+    const current = this;
+    this.changeMode = function(mode) {
+      if (current.original.lastMode === Window.WindowMode.Minimized) {
+        switch (mode) {
+          case Window.WindowMode.Normal:
+            current.titlebarObj.showMinIcon = true;
+            current.titlebarObj.showFullscrIcon = true;
+            current.titlebarObj.showTitle = true;
+            current.window.style.top = current.original.top;
+            current.window.style.left = current.original.left;
+            current.window.style.width = current.original.width;
+            current.window.style.height = current.original.height;
+            current.original.lastMode = Window.WindowMode.Normal;
+            break;
+          case Window.WindowMode.FullScreen:
+            current.titlebarObj.showMinIcon = true;
+            current.titlebarObj.showFullscrIcon = false;
+            current.titlebarObj.showTitle = true;
+            current.window.style.top = "0px";
+            current.window.style.left = "0px";
+            current.window.style.width = "100%";
+            current.window.style.height = "100%";
+            current.original.lastMode = Window.WindowMode.FullScreen;
+            break;
+        }
+        current.titlebarObj.update();
+        return;
+      }
+      switch (mode) {
+        case Window.WindowMode.Normal:
+          current.titlebarObj.showMinIcon = true;
+          current.titlebarObj.showFullscrIcon = true;
+          current.titlebarObj.showTitle = true;
+          current.window.style.top = current.original.top;
+          current.window.style.left = current.original.left;
+          current.window.style.width = current.original.width;
+          current.window.style.height = current.original.height;
+          current.original.lastMode = Window.WindowMode.Normal;
+          break;
+        case Window.WindowMode.FullScreen:
+          current.original.lastMode = Window.WindowMode.FullScreen,
+          current.window.style.top = "0px";
+          current.window.style.left = "0px";
+          current.window.style.width = "100%";
+          current.window.style.height = "100%";
+          current.titlebarObj.showMinIcon = true;
+          current.titlebarObj.showFullscrIcon = false;
+          current.titlebarObj.showTitle = true;
+          break;
+        case Window.WindowMode.Minimized:
+          if (current.original.lastMode === Window.WindowMode.Normal) {
+            current.window.style.top = current.original.top;
+            current.window.style.left = current.original.left;
+            current.window.style.width = current.original.width;
+            current.window.style.height = current.original.height;
+            current.titlebarObj.showFullscrIcon = false;
+          }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
+            current.titlebarObj.showFullscrIcon = true;
+          }
+          current.original.lastMode = Window.WindowMode.Minimized;
+          current.window.style.top = "0px";
+          current.window.style.left = "0px";
+          current.window.style.width = "60px";
+          current.window.style.height = "16px";
+          current.titlebarObj.showMinIcon = false;
+          current.titlebarObj.showTitle = false;
+          break;
+      }
+      current.titlebarObj.update();
+    };
+    this.startmouseoffset = {
+      x: 0,
+      y: 0,
+    }
+    this.inDraging = false;
+    const drag_handler = function(e) {
+      e.preventDefault();
+    };
+    const allowDropEventAll = function(){
+      current.main.window.document.addEventListener("drop",drag_handler);
+      current.main.window.document.addEventListener("dragover",drag_handler);
+    }
+    const removeDropEventAll = function(){
+      current.main.window.document.removeEventListener("drop",drag_handler);
+      current.main.window.document.removeEventListener("dragover",drag_handler);
+    }
+    this.titlebarObj = new TitleBar(this.main,this.titlebar,{
+      title: options.title || "Window",
+      onclick: {
+        close: function() {
+          console.log("Close");
+        },
+        normalscr: function() {
+          current.changeMode(Window.WindowMode.Normal);
+        },
+        fullscr: function() {
+          current.changeMode(Window.WindowMode.FullScreen);
+        },
+        min: function() {
+          current.changeMode(Window.WindowMode.Minimized);
+        },
+        menu: function() {
+          console.log("Menu");
+        },
+      },
+      ondblclick: {
+        titlebar: function() {
+          if (current.original.lastMode === Window.WindowMode.Normal) {
+            current.changeMode(Window.WindowMode.FullScreen);
+          }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
+            current.changeMode(Window.WindowMode.Normal);
+          }else if (current.original.lastMode === Window.WindowMode.Minimized) {
+            if (current.titlebarObj.showFullscrIcon) {
+              current.changeMode(Window.WindowMode.FullScreen);
+            }else{
+              current.changeMode(Window.WindowMode.Normal);
+            }
+          }
+        },
+      },
+      onmouseover: {
+        menu: function() {
+          current.tooltip.style.display = "block";
+          current.tooltip.innerHTML = current.titlebarObj.title;
+          current.tooltip.style.left = current.titlebarObj.menuitem.getBoundingClientRect().left + "px";
+          current.tooltip.style.top = current.titlebarObj.menuitem.getBoundingClientRect().bottom + "px";
+        },
+      },
+      onmouseout: {
+        menu: function() {
+          current.tooltip.style.display = "none";
+        },
+      },
+      ondrag: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          current.tooltip.style.display = "none";
+          if (e.screenX === 0 && e.screenY === 0) {
+            return;
+          }
+          current.window.style.top = (e.clientY-current.startmouseoffset.y) + "px";
+          current.window.style.left = (e.clientX-current.startmouseoffset.x) + "px";
+          current.original.top = current.window.style.top;
+          current.original.left = current.window.style.left;
+        },
+      },
+      ondragstart: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          current.startmouseoffset.x = e.offsetX;
+          current.startmouseoffset.y = e.offsetY;
+          current.tooltip.style.display = "none";
+          current.window.style.opacity = 0.5;
+          allowDropEventAll();
+          current.inDraging = true;
+        },
+      },
+      ondragend: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          current.window.style.opacity = 1;
+          //current.window.style.top = (e.clientY-current.startmouseoffset.y) + "px";
+          //current.window.style.left = (e.clientX-current.startmouseoffset.x) + "px";
+          //current.original.top = current.window.style.top;
+          //current.original.left = current.window.style.left;
+          current.window.style.top = current.original.top;
+          current.window.style.left = current.original.left;
+          removeDropEventAll();
+          current.inDraging = false;
+        },
+      },
+      ondragleave: {
+        titlebar: function(target,e) {
+          e.preventDefault();
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          current.isDraging = false;
+          current.window.style.top = current.original.top;
+          current.window.style.left = current.original.left;
+        },
+      },
+    });
+    this.body = this.main.window.document.createElement("div");
+    if (options.enableVScrollbar) {
+      if (options.enableHScrollbar) {
+        this.body.style.overflow = "scroll";
+      }else if (options.enableHScrollbar === null) {
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "auto";
+        this.body.style.overflowY = "scroll";
+      }else{
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "hidden";
+        this.body.style.overflowY = "scroll";
+      }
+    }else if (options.enableVScrollbar === null) {
+      if (options.enableHScrollbar) {
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "scroll";
+        this.body.style.overflowY = "auto";
+      }else if (options.enableHScrollbar === null) {
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "auto";
+        this.body.style.overflowY = "auto";
+      }else{
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "hidden";
+        this.body.style.overflowY = "auto";
+      }
+    }else{
+      if (options.enableHScrollbar) {
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "scroll";
+        this.body.style.overflowY = "hiedden";
+      }else if (options.enableHScrollbar === null) {
+        this.body.style.overflow = "auto";
+        this.body.style.overflowX = "auto";
+        this.body.style.overflowY = "hidden";
+      }else{
+        this.body.style.overflow = "hidden";
+      }
+    }
+    this.window.appendChild(this.body);
+    this.body.style.width = "100%";
+    this.body.style.height = "calc(100% - " + (this.titlebarObj.titlebar.style.height).replace(/px$/,"") + "px)";
+    this.body.style.backgroundColor = "rgba(255,255,255,1)";
+    //this.body.style.overflow = "hidden";
+  }
+}
+
+// ================================================
 // module: browser , from: Storage.js
 // ================================================
 // storage class
@@ -2492,6 +3104,12 @@ const Main = self.Main = class Main {
       width: this.baseCanvas.width,
       height: this.baseCanvas.height,
     };
+    this.testWindow = new modules.browser.Window(this,this.targetObj,{
+      enableVScrollbar: null,
+      enableHScrollbar: null,
+      fixsize: false,
+      title:"Test Window",
+    });
     this.targetObj.appendChild(this.baseCanvas);
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
