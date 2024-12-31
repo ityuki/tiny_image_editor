@@ -252,7 +252,7 @@ const Window = self.Window = class Window {
           e.preventDefault();
           if (!/^touch/.test(e.type)) return;
           current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
-          current.window.style.top = e.changedTouches[0].clientY - current.touchStartY + 'px';
+          current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
         },
       },
     });
