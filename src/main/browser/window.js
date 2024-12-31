@@ -216,7 +216,7 @@ const Window = self.Window = class Window {
       },
       onpointermove: {
         titlebar: function(target,e) {
-          if(e.buttons){
+          if(e.buttons && (e.pointerType !== "touch" && e.pointerType !== "pen")) {
             if (current.original.lastMode === Window.WindowMode.FullScreen) return;
             current.tooltip.style.display = "none";
             if (e.screenX === 0 && e.screenY === 0) {
@@ -229,6 +229,30 @@ const Window = self.Window = class Window {
             current.original.left = current.window.style.left;
             current.titlebarObj.titlebar.setPointerCapture(e.pointerId);
           }
+        },
+      },
+      ontouchstart: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          current.tooltip.style.display = "none";
+          e.preventDefault();
+          current.touchStartX = e.changedTouches[0].pageX - current.window.offsetLeft;
+          current.touchStartY = e.changedTouches[0].pageY - current.window.offsetLeft;
+        },
+      },
+      ontouchend: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          e.preventDefault();
+        },
+      },
+      ontouchmove: {
+        titlebar: function(target,e) {
+          if (current.original.lastMode === Window.WindowMode.FullScreen) return;
+          e.preventDefault();
+          if (!/^touch/.test(e.type)) return;
+          current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
+          current.window.style.top = e.changedTouches[0].clientY - current.touchStartY + 'px';
         },
       },
     });

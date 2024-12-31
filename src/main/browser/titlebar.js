@@ -91,10 +91,39 @@ const TitleBar = self.TitleBar = class TitleBar {
       close: options.onpointermove.close || function(){},
       titlebar: options.onpointermove.titlebar || function(){},
     };
-    if (options.ondrag === undefined) {
-      options.ondrag = {};
+    if (options.ontouchstart === undefined) {
+      options.ontouchstart = {};
     }
-
+    this.ontouchstart = {
+      menu: options.ontouchstart.menu || function(){},
+      min: options.ontouchstart.min || function(){},
+      normalscr: options.ontouchstart.normalscr || function(){},
+      fullscr: options.ontouchstart.fullscr || function(){},
+      close: options.ontouchstart.close || function(){},
+      titlebar: options.ontouchstart.titlebar || function(){},
+    };
+    if (options.ontouchend === undefined) {
+      options.ontouchend = {};
+    }
+    this.ontouchend = {
+      menu: options.ontouchend.menu || function(){},
+      min: options.ontouchend.min || function(){},
+      normalscr: options.ontouchend.normalscr || function(){},
+      fullscr: options.ontouchend.fullscr || function(){},
+      close: options.ontouchend.close || function(){},
+      titlebar: options.ontouchend.titlebar || function(){},
+    };
+    if (options.ontouchmove === undefined) {
+      options.ontouchmove = {};
+    }
+    this.ontouchmove = {
+      menu: options.ontouchmove.menu || function(){},
+      min: options.ontouchmove.min || function(){},
+      normalscr: options.ontouchmove.normalscr || function(){},
+      fullscr: options.ontouchmove.fullscr || function(){},
+      close: options.ontouchmove.close || function(){},
+      titlebar: options.ontouchmove.titlebar || function(){},
+    };
     this.titlebar = this.main.window.document.createElement("div");
     this.titlebar.style.width = "100%";
     this.titlebar.style.height = this.height + "px";
@@ -260,6 +289,15 @@ const TitleBar = self.TitleBar = class TitleBar {
       });
       item.addEventListener("pointermove", (e) => {
         this.onpointermove[itemName](itemName,e);
+      });
+      item.addEventListener("touchstart", (e) => {
+        this.ontouchstart[itemName](itemName,e);
+      });
+      item.addEventListener("touchend", (e) => {
+        this.ontouchend[itemName](itemName,e);
+      });
+      item.addEventListener("touchmove", (e) => {
+        this.ontouchmove[itemName](itemName,e);
       });
     }
     this.update();
