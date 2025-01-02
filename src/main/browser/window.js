@@ -49,8 +49,6 @@ const Window = self.Window = class Window {
       this.window.style.position = "fixed";
       this.main.window.document.body.appendChild(this.window);
     }
-    current.original.top = current.window.style.top;
-    current.original.left = current.window.style.left;
     this.titlebar = this.main.window.document.createElement("div");
     this.tooltip = this.main.window.document.createElement("div");
     this.tooltip.style.position = "fixed";
@@ -168,27 +166,38 @@ const Window = self.Window = class Window {
     this.titlebarObj = new TitleBar(this.main,this.titlebar,{
       title: options.title || "Window",
       onclick: {
-        close: function() {
+        close: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
           console.log("Close");
         },
-        normalscr: function() {
+        normalscr: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.Normal);
         },
-        fullscr: function() {
+        fullscr: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.FullScreen);
         },
-        min: function() {
+        min: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.Minimized);
         },
-        menu: function() {
+        menu: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
           console.log("Menu");
         },
-        titlebar: function() {
-          current.setTop();
+        titlebar: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
         },
       },
       ondblclick: {
-        titlebar: function() {
+        titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.Normal) {
             current.changeMode(Window.WindowMode.FullScreen);
           }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
@@ -203,7 +212,7 @@ const Window = self.Window = class Window {
         },
       },
       onmouseover: {
-        menu: function() {
+        menu: function(target,e) {
           current.tooltip.style.display = "block";
           current.tooltip.innerHTML = current.titlebarObj.title;
           current.tooltip.style.left = current.titlebarObj.menuitem.getBoundingClientRect().left + "px";
@@ -219,7 +228,7 @@ const Window = self.Window = class Window {
         },
       },
       onmouseout: {
-        menu: function() {
+        menu: function(target,e) {
           current.tooltip.style.display = "none";
         },
       },
@@ -245,6 +254,7 @@ const Window = self.Window = class Window {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           current.tooltip.style.display = "none";
           e.preventDefault();
+          e.stopPropagation();
           current.touchStartX = e.changedTouches[0].pageX - current.window.offsetLeft;
           current.touchStartY = e.changedTouches[0].pageY - current.window.offsetLeft;
         },
@@ -252,36 +262,43 @@ const Window = self.Window = class Window {
       ontouchend: {
         close: function(target,e) {
           e.preventDefault();
+          e.stopPropagation();
           current.titlebarObj.closeitem.dispatchEvent(new Event("click"));
         },
         normalscr: function(target,e) {
           e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.Normal);
           current.titlebarObj.normalscritem.dispatchEvent(new Event("click"));
         },
         fullscr: function(target,e) {
           e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.FullScreen);
           current.titlebarObj.fullscritem.dispatchEvent(new Event("click"));
         },
         min: function(target,e) {
           e.preventDefault();
+          e.stopPropagation();
           current.changeMode(Window.WindowMode.Minimized);
           current.titlebarObj.minitem.dispatchEvent(new Event("click"));
         },
         menu: function(target,e) {
           e.preventDefault();
+          e.stopPropagation();
           current.titlebarObj.menuitem.dispatchEvent(new Event("click"));
         },
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           e.preventDefault();
+          e.stopPropagation();
         },
       },
       ontouchmove: {
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           e.preventDefault();
+          e.stopPropagation();
           if (!/^touch/.test(e.type)) return;
           current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
           current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';

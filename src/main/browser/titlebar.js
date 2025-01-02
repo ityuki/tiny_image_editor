@@ -246,18 +246,18 @@ const TitleBar = self.TitleBar = class TitleBar {
     const current = this;
     for(let itemName of ["min","normalscr","fullscr","close"]) {
       let item = this[itemName + "item"];
-      item.addEventListener("mouseover", () => {
+      item.addEventListener("mouseover", (e) => {
         this.main.colorClass.setColorClass(item,current.color.iconhoverbgcolor,current.id);
         this.main.colorClass.setColorClass(item,current.color.iconhovercolor,current.id);
-        this.onmouseover[itemName](itemName);
+        this.onmouseover[itemName](itemName,e);
       });
-      item.addEventListener("mouseout", () => {
+      item.addEventListener("mouseout", (e) => {
         this.main.colorClass.setColorClass(item,current.color.iconbgcolor,current.id);
         this.main.colorClass.setColorClass(item,current.color.iconcolor,current.id);
-        this.onmouseout[itemName](itemName);
+        this.onmouseout[itemName](itemName,e);
       });
-      item.addEventListener("click", () => {
-        this.onclick[itemName](itemName);
+      item.addEventListener("click", (e) => {
+        this.onclick[itemName](itemName,e);
       });
       item.addEventListener("pointermove", (e) => {
         this.onpointermove[itemName](itemName,e);
@@ -277,23 +277,24 @@ const TitleBar = self.TitleBar = class TitleBar {
       if (itemName === "titlebar") {
         item = this.titlebar;
       }
-      item.addEventListener("mouseover", () => {
-        this.onmouseover[itemName](itemName);
+      item.addEventListener("mouseover", (e) => {
+        this.onmouseover[itemName](itemName,e);
       });
-      item.addEventListener("mouseout", () => {
-        this.onmouseout[itemName](itemName);
+      item.addEventListener("mouseout", (e) => {
+        this.onmouseout[itemName](itemName,e);
       });
       item.addEventListener("click", (e) => {
         e.preventDefault();
+        const currente = e;
         if (this.dblclickTimer !== null){
           clearTimeout(this.dblclickTimer);
           this.dblclickTimer = null;
-          this.ondblclick[itemName](itemName);
+          this.ondblclick[itemName](itemName,currente);
           return;          
         }
         this.dblclickTimer = setTimeout(() => {
           this.dblclickTimer = null;
-          this.onclick[itemName](itemName);
+          this.onclick[itemName](itemName,currente);
         },300);
       });
       item.addEventListener("pointermove", (e) => {
