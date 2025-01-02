@@ -25,7 +25,7 @@ const Window = self.Window = class Window {
     }else{
       this.window.style.resize = "both";
       this.window.addEventListener("touchstart",function(e){
-        current.dispatchEvent(new Event("resizestart"));
+        current.window.dispatchEvent(new Event("resizestart"));
       });
     }
     this.window.style.overflow = "hidden";
@@ -92,6 +92,7 @@ const Window = self.Window = class Window {
             current.window.style.width = current.original.width;
             current.window.style.height = current.original.height;
             current.original.lastMode = Window.WindowMode.Normal;
+            current.setTop();
             break;
           case Window.WindowMode.FullScreen:
             current.titlebarObj.showMinIcon = true;
@@ -102,6 +103,7 @@ const Window = self.Window = class Window {
             current.window.style.width = "calc(100%-2px)";
             current.window.style.height = "calc(100%-2px)";
             current.original.lastMode = Window.WindowMode.FullScreen;
+            current.setTop();
             break;
         }
         current.titlebarObj.update();
@@ -117,6 +119,7 @@ const Window = self.Window = class Window {
           current.window.style.width = current.original.width;
           current.window.style.height = current.original.height;
           current.original.lastMode = Window.WindowMode.Normal;
+          current.setTop();
           break;
         case Window.WindowMode.FullScreen:
           current.original.lastMode = Window.WindowMode.FullScreen,
@@ -127,6 +130,7 @@ const Window = self.Window = class Window {
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = false;
           current.titlebarObj.showTitle = true;
+          current.setTop();
           break;
         case Window.WindowMode.Minimized:
           if (current.original.lastMode === Window.WindowMode.Normal) {
@@ -244,20 +248,28 @@ const Window = self.Window = class Window {
         },
       },
       ontouchend: {
-        close: function() {
-          console.log("Close");
+        close: function(target,e) {
+          e.preventDefault();
+          current.titlebarObj.closeitem.dispatchEvent(new Event("click"));
         },
-        normalscr: function() {
+        normalscr: function(target,e) {
+          e.preventDefault();
           current.changeMode(Window.WindowMode.Normal);
+          current.titlebarObj.normalscritem.dispatchEvent(new Event("click"));
         },
-        fullscr: function() {
+        fullscr: function(target,e) {
+          e.preventDefault();
           current.changeMode(Window.WindowMode.FullScreen);
+          current.titlebarObj.fullscritem.dispatchEvent(new Event("click"));
         },
-        min: function() {
+        min: function(target,e) {
+          e.preventDefault();
           current.changeMode(Window.WindowMode.Minimized);
+          current.titlebarObj.minitem.dispatchEvent(new Event("click"));
         },
-        menu: function() {
-          console.log("Menu");
+        menu: function(target,e) {
+          e.preventDefault();
+          current.titlebarObj.menuitem.dispatchEvent(new Event("click"));
         },
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
