@@ -2467,7 +2467,6 @@ const Window = self.Window = class Window {
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           current.tooltip.style.display = "none";
-          e.preventDefault();
           e.stopPropagation();
           current.touchStartX = e.changedTouches[0].pageX - current.window.offsetLeft;
           current.touchStartY = e.changedTouches[0].pageY - current.window.offsetLeft;
