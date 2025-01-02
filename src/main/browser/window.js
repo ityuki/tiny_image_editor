@@ -49,6 +49,8 @@ const Window = self.Window = class Window {
       this.window.style.position = "fixed";
       this.main.window.document.body.appendChild(this.window);
     }
+    current.original.top = current.window.style.top;
+    current.original.left = current.window.style.left;
     this.titlebar = this.main.window.document.createElement("div");
     this.tooltip = this.main.window.document.createElement("div");
     this.tooltip.style.position = "fixed";
