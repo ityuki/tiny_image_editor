@@ -12,6 +12,7 @@ const Window = self.Window = class Window {
       options = {};
     }
     this.main = main;
+    const current = this;
     this.options = options;
     this.visible = true;
     this.parentObj = parentObj || null;
@@ -23,6 +24,9 @@ const Window = self.Window = class Window {
       this.window.style.resize = "none";
     }else{
       this.window.style.resize = "both";
+      this.window.addEventListener("touchstart",function(e){
+        current.dispatchEvent(new Event("resizestart"));
+      });
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
@@ -65,7 +69,6 @@ const Window = self.Window = class Window {
       left: this.window.style.left,
       lastMode: Window.WindowMode.Normal,
     };
-    const current = this;
     this.changeMode = function(mode) {
       if (current.original.lastMode === Window.WindowMode.Minimized) {
         if (current.parentObj instanceof Window) {
@@ -241,6 +244,21 @@ const Window = self.Window = class Window {
         },
       },
       ontouchend: {
+        close: function() {
+          console.log("Close");
+        },
+        normalscr: function() {
+          current.changeMode(Window.WindowMode.Normal);
+        },
+        fullscr: function() {
+          current.changeMode(Window.WindowMode.FullScreen);
+        },
+        min: function() {
+          current.changeMode(Window.WindowMode.Minimized);
+        },
+        menu: function() {
+          console.log("Menu");
+        },
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           e.preventDefault();

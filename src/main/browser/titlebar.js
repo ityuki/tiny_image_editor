@@ -262,6 +262,15 @@ const TitleBar = self.TitleBar = class TitleBar {
       item.addEventListener("pointermove", (e) => {
         this.onpointermove[itemName](itemName,e);
       });
+      item.addEventListener("touchstart", (e) => {
+        this.ontouchstart[itemName](itemName,e);
+      });
+      item.addEventListener("touchend", (e) => {
+        this.ontouchend[itemName](itemName,e);
+      });
+      item.addEventListener("touchmove", (e) => {
+        this.ontouchmove[itemName](itemName,e);
+      });
     }
     for(let itemName of ["titlebar","menu"]) {
       let item = this[itemName + "item"];
