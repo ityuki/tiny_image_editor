@@ -197,6 +197,27 @@ const Window = self.Window = class Window {
         },
       },
       ondblclick: {
+        close: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        normalscr: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        fullscr: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        min: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        menu: function(target,e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Menu");
+        },
         titlebar: function(target,e) {
           if (current.original.lastMode === Window.WindowMode.Normal) {
             current.changeMode(Window.WindowMode.FullScreen);
