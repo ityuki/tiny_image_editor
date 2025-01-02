@@ -285,6 +285,7 @@ const TitleBar = self.TitleBar = class TitleBar {
       });
       item.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const currente = e;
         if (this.dblclickTimer !== null){
           clearTimeout(this.dblclickTimer);

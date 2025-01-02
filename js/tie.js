@@ -1844,6 +1844,232 @@ const Layer = self.Layer = class Layer {
 }
 
 // ================================================
+// module: browser , from: objectResizer.js
+// ================================================
+const ObjectResizer = self.ObjectResizer = class ObjectResizer {
+  constructor(main,target,parent){
+    this.main = main;
+    this.target = target;
+    this.parent = parent;
+    this.body = null;
+    this.current = this.main.window.document.createElement("div");
+    this.current.style.position = "absolute";
+    this.current.style.boxSizing = "border-box";
+    this.current.style.backgroundColor = "rgba(0,220,0,1)";
+    this.diffRight = 0;
+    this.diffBottom = 0;
+    this.current.appendChild(this.target);
+    this.target.style.position = "absolute";
+    this.target.style.left = "0px";
+    this.target.style.top = "0px";
+    this.parent.addEventListener("resize",(e)=>{
+      this.resizeMax();
+    });
+    this.target.addEventListener("resize",(e)=>{ 
+      this.resizeMax();
+    });
+    this.clickCurrent = false;
+    this.startx = 0;
+    this.starty = 0;
+    this.startw = 0;
+    this.starth = 0;
+    this.mmoveEvent = (e)=>{
+      if (!this.clickCurrent){
+        return;
+      }
+      if (e.target !== this.current){
+        return;
+      }
+      if(e.buttons) {
+        this.resizeInner(this.startw-this.startx + e.pageX,this.starth-this.starty + e.pageY);
+        this.current.setPointerCapture(e.pointerId);
+      }
+    }
+    this.moveEvent = (e)=>{
+      if (e.touches){
+        if (e.touches.length > 1){
+          return;
+        }
+        e = e.touches[0];
+      }
+    };
+    this.upEvent = (e)=>{
+      //this.main.window.removeEventListener("touchmove",this.moveEvent);
+      this.main.window.removeEventListener("pointermove",this.mmoveEvent);
+      //this.main.window.removeEventListener("touchup",this.upEvent);
+      this.main.window.removeEventListener("pointerup",this.upEvent);
+      this.clickCurrent = false;
+    };
+    this.downEvent = (e)=>{
+      if (e.target !== this.current){
+        return;
+      }
+      if (e.touches){
+        if (e.touches.length > 1){
+          return;
+        }
+        e = e.touches[0];
+      }
+      this.startx = e.pageX;
+      this.starty = e.pageY;
+      const trect = this.target.getBoundingClientRect();
+      this.startw = trect.width;
+      this.starth = trect.height;
+      //this.current.addEventListener("touchmove",this.moveEvent);
+      this.current.addEventListener("pointermove",this.mmoveEvent);
+      //this.current.addEventListener("touchup",this.upEvent);
+      this.current.addEventListener("pointerup",this.upEvent);
+      this.clickCurrent = true;
+      this.current.setPointerCapture(e.pointerId);
+    };
+    this.current.addEventListener("touchstart",this.downEvent);
+    this.current.addEventListener("pointerdown",this.downEvent);
+    //this.current.addEventListener("pointermove",this.mmoveEvent);
+    //this.resizeMax();
+    this.ismin = false;
+  }
+  setMin(){
+    this.ismin = true;
+    this.current.style.width = "0px";
+    this.current.style.height = "0px";
+  }
+  unsetMin(){
+    this.ismin = false;
+  }
+  setBody(body){
+    this.body = body;
+    this.body.appendChild(this.current);
+  }
+  setDiff(right,bottom){
+    this.diffRight = right;
+    this.diffBottom = bottom;
+    this.resizeMax();
+  }
+  getPos(){
+    const crect = this.current.getBoundingClientRect();
+    return {left:this.current.offsetLeft,top:this.current.offsetTop,width:crect.width,height:crect.height};
+  }
+  move(x,y){
+    if (typeof x === "string"){
+      x = parseFloat(x.replace(/px$/,""));
+    }
+    if (typeof y === "string"){
+      y = parseFloat(y.replace(/px$/,""));
+    }
+    const prect = this.parent.getBoundingClientRect();
+    const trect = this.target.getBoundingClientRect();
+    let brect = prect;
+    if (this.body){
+      brect = this.body.getBoundingClientRect();
+    }
+    let left = x;
+    if (left > brect.width - (trect.width+this.diffRight)){
+      left = brect.width - (trect.width+this.diffRight);
+    }
+    if (left < 0){
+      left = 0;
+    }
+    let top = y;
+    if (top > brect.height - (trect.height+this.diffBottom)){
+      top = brect.height - (trect.height+this.diffBottom);
+    }
+    if (top < 0){
+      top = 0;
+    }
+    this.current.style.left = left + "px";
+    this.current.style.top = top + "px";
+    let width = trect.width + this.diffRight;
+    if (left + width > brect.width){
+      width = brect.width - left;
+    }
+    if (width < 0){
+      width = 0;
+    }
+    let height = trect.height + this.diffBottom;
+    if (top + height > brect.height){
+      height = brect.height - top;
+    }
+    if (height < 0){
+      height = 0;
+    }
+    this.target.style.left = "0px";
+    this.target.style.top = "0px";
+  }
+  resizeInner(w,h){
+    this.target.style.width = w + "px";
+    this.target.style.height = h + "px";
+    this.resizeMax();
+  }
+  resizeMax(){
+    const trect = this.target.getBoundingClientRect();
+    this.resize(trect.width+this.diffRight,trect.height+this.diffBottom);
+  }
+  resize(w,h){
+    if (this.ismin){
+      return;
+    }
+    const trect = this.target.getBoundingClientRect();
+    if (w > trect.width+this.diffRight){
+      w = trect.width+this.diffRight;
+    }
+    if (w < trect.width){
+      w = trect.width;
+    }
+    if (h > trect.height+this.diffBottom){
+      h = trect.height+this.diffBottom;
+    }
+    if (h < trect.height){
+      h = trect.height;
+    }
+    this.current.style.width = w + "px";
+    this.current.style.height = h + "px";
+    this.fit();
+  }
+  fit(){
+    if (this.ismin){
+      return;
+    }
+    const crect = this.current.getBoundingClientRect();
+    crect.offsetTop = this.current.offsetTop;
+    crect.offsetLeft = this.current.offsetLeft;
+    let prect = this.parent.getBoundingClientRect();
+    const trect = this.target.getBoundingClientRect();
+    let brect = prect;
+    if (this.body){
+      brect = this.body.getBoundingClientRect();
+    }
+    let cwitdh = crect.width;
+    let width = crect.width - this.diffRight;
+    if (crect.offsetLeft + width > brect.width - 3){
+      width = brect.width - crect.offsetLeft -3;
+      cwitdh = width + this.diffRight;
+    }
+    if (width < 0){
+      width = 0;
+    }
+    let chight = crect.height;
+    let height = crect.height - this.diffBottom;
+    if (crect.offsetTop + height > brect.height -3){
+      height = brect.height - crect.offsetTop -3;
+      chight = height + this.diffBottom;
+    }
+    if (height < 0){
+      height = 0;
+    }
+    if (crect.width != cwitdh || crect.height != chight){
+      this.current.style.width = cwitdh + "px";
+      this.current.style.height = chight + "px";
+    }
+    if (trect.width != width || trect.height != height){
+      this.target.style.width = width + "px";
+      this.target.style.height = height + "px";
+    }
+    this.target.style.left = "0px";
+    this.target.style.top = "0px";
+  }
+}
+
+// ================================================
 // module: browser , from: titlebar.js
 // ================================================
 const TitleBar = self.TitleBar = class TitleBar {
@@ -2133,6 +2359,7 @@ const TitleBar = self.TitleBar = class TitleBar {
       });
       item.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const currente = e;
         if (this.dblclickTimer !== null){
           clearTimeout(this.dblclickTimer);
@@ -2234,34 +2461,37 @@ const Window = self.Window = class Window {
     this.childSmallWindow = [];
     this.childWindow = [];
     this.window = this.main.window.document.createElement("div");
+    this.window.style.resize = "none";
+    let prealObj = this.parentObj;
+    if (prealObj instanceof Window) {
+      prealObj = prealObj.window;
+    }
+    this.resizer = new ObjectResizer(this.main,this.window,prealObj);
     if (options.fixsize) {
-      this.window.style.resize = "none";
+      // DO NOTHING
     }else{
-      this.window.style.resize = "both";
-      this.window.addEventListener("touchstart",function(e){
-        current.window.dispatchEvent(new Event("resizestart"));
-      });
+      this.resizer.setDiff(5,5);
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
     this.window.style.height = options.height || "100px";
-    this.window.style.top = options.top || "0px";
-    this.window.style.left = options.left || "0px";
+    this.window.style.top = "0px";
+    this.window.style.left = "0px";
     this.window.style.borderWidth = "1px";
     this.main.colorClass.setColor(this.window,"WindowBorderColor",this.id);
     this.window.style.borderStyle = "solid";
     if (parentObj) {
-      this.window.style.position = "absolute";
+      this.window.style.position = "relative";
       this.window.boxSize = "border-box";
       if (parentObj instanceof Window) {
-        this.parentObj.body.appendChild(this.window);
+        //this.parentObj.body.appendChild(this.window);
         this.parentObj.addChildWindow(this);
       }else{
-        this.parentObj.appendChild(this.window);
+        //this.parentObj.appendChild(this.window);
       }
     }else{
       this.window.style.position = "fixed";
-      this.main.window.document.body.appendChild(this.window);
+      //this.main.window.document.body.appendChild(this.window);
     }
     this.titlebar = this.main.window.document.createElement("div");
     this.tooltip = this.main.window.document.createElement("div");
@@ -2279,8 +2509,8 @@ const Window = self.Window = class Window {
     this.original = {
       width: this.window.style.width,
       height: this.window.style.height,
-      top: this.window.style.top,
-      left: this.window.style.left,
+      top: this.resizer.getPos().x,
+      left: this.resizer.getPos().y,
       lastMode: Window.WindowMode.Normal,
     };
     this.changeMode = function(mode) {
@@ -2301,10 +2531,14 @@ const Window = self.Window = class Window {
             current.titlebarObj.showMinIcon = true;
             current.titlebarObj.showFullscrIcon = true;
             current.titlebarObj.showTitle = true;
-            current.window.style.top = current.original.top;
-            current.window.style.left = current.original.left;
-            current.window.style.width = current.original.width;
-            current.window.style.height = current.original.height;
+            current.resizer.resizeInner(current.original.width,current.original.height);
+            current.resizer.move(current.original.left,current.original.top);
+            //current.window.style.width = current.original.width;
+            //current.window.style.height = current.original.height;
+            current.resizer.unsetMin();
+            current.resizer.resizeMax();
+            current.resizer.fit();
+            current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.Normal;
             current.setTop();
             break;
@@ -2312,10 +2546,12 @@ const Window = self.Window = class Window {
             current.titlebarObj.showMinIcon = true;
             current.titlebarObj.showFullscrIcon = false;
             current.titlebarObj.showTitle = true;
-            current.window.style.top = "0px";
-            current.window.style.left = "0px";
-            current.window.style.width = "calc(100%-2px)";
-            current.window.style.height = "calc(100%-2px)";
+            current.resizer.move(0,0);
+            current.resizer.current.style.width = "calc(100% - 2px)";
+            current.resizer.current.style.height = "calc(100% - 2px)";
+            current.resizer.unsetMin();
+            current.resizer.fit();
+            current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.FullScreen;
             current.setTop();
             break;
@@ -2328,19 +2564,23 @@ const Window = self.Window = class Window {
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = true;
           current.titlebarObj.showTitle = true;
-          current.window.style.top = current.original.top;
-          current.window.style.left = current.original.left;
-          current.window.style.width = current.original.width;
-          current.window.style.height = current.original.height;
+          current.resizer.resizeInner(current.original.width,current.original.height);
+          current.resizer.move(current.original.left,current.original.top);
+          current.window.dispatchEvent(new Event("resize"));
           current.original.lastMode = Window.WindowMode.Normal;
           current.setTop();
           break;
         case Window.WindowMode.FullScreen:
           current.original.lastMode = Window.WindowMode.FullScreen,
-          current.window.style.top = "0px";
-          current.window.style.left = "0px";
-          current.window.style.width = "calc(100% - 2px)";
-          current.window.style.height = "calc(100% - 2px)";
+          current.original.width = current.resizer.getPos().width;
+          current.original.height = current.resizer.getPos().height;
+          current.original.top = current.resizer.getPos().top;
+          current.original.left = current.resizer.getPos().left;
+          current.resizer.move(0,0);
+          current.resizer.current.style.width = "calc(100% - 2px)";
+          current.resizer.current.style.height = "calc(100% - 2px)";
+          current.resizer.fit();
+          current.window.dispatchEvent(new Event("resize"));
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = false;
           current.titlebarObj.showTitle = true;
@@ -2348,29 +2588,30 @@ const Window = self.Window = class Window {
           break;
         case Window.WindowMode.Minimized:
           if (current.original.lastMode === Window.WindowMode.Normal) {
-            current.window.style.top = current.original.top;
-            current.window.style.left = current.original.left;
-            current.window.style.width = current.original.width;
-            current.window.style.height = current.original.height;
+            current.original.width = current.resizer.getPos().width;
+            current.original.height = current.resizer.getPos().height;
+            current.original.top = current.resizer.getPos().top;
+            current.original.left = current.resizer.getPos().left;
             current.titlebarObj.showFullscrIcon = false;
           }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
             current.titlebarObj.showFullscrIcon = true;
           }
           current.original.lastMode = Window.WindowMode.Minimized;
-          current.window.style.top = "calc(100% - 20px)";
+          current.resizer.current.style.top = "calc(100% - 20px)";
           if (current.parentObj instanceof Window) {
             let idx = current.parentObj.childSmallWindow.indexOf(null);
             if (idx < 0) {
               idx = current.parentObj.childSmallWindow.length;
               current.parentObj.childSmallWindow.push(current);
             }
-            current.window.style.left = (idx * 60) + "px";
+            current.resizer.current.style.left = (idx * 60) + "px";
             current.parentObj.childSmallWindow[idx] = current;
           }else{
-            current.window.style.left = "0px";
+            current.resizer.current.style.left = "0px";
           }
           current.window.style.width = "60px";
           current.window.style.height = "20px";  
+          current.resizer.setMin();
           current.titlebarObj.showMinIcon = false;
           current.titlebarObj.showTitle = false;
           break;
@@ -2475,12 +2716,16 @@ const Window = self.Window = class Window {
             if (e.screenX === 0 && e.screenY === 0) {
               return;
             }
-            current.window.style.left     = current.window.offsetLeft + e.movementX + 'px';
-            current.window.style.top      = current.window.offsetTop  + e.movementY + 'px';
+            const rpos = current.resizer.getPos();
+            current.resizer.move(rpos.left + e.movementX,rpos.top + e.movementY);
+            //current.window.style.left     = current.window.offsetLeft + e.movementX + 'px';
+            //current.window.style.top      = current.window.offsetTop  + e.movementY + 'px';
             //current.window.style.position = 'absolute';
-            current.original.top = current.window.style.top;
-            current.original.left = current.window.style.left;
+            current.original.top = rpos.top + e.movementY;
+            current.original.left = rpos.left + e.movementX;
             current.titlebarObj.titlebar.setPointerCapture(e.pointerId);
+            e.preventDefault();
+            e.stopPropagation();
           }
         },
       },
@@ -2489,8 +2734,8 @@ const Window = self.Window = class Window {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           current.tooltip.style.display = "none";
           e.stopPropagation();
-          current.touchStartX = e.changedTouches[0].pageX - current.window.offsetLeft;
-          current.touchStartY = e.changedTouches[0].pageY - current.window.offsetLeft;
+          current.touchStartX = e.changedTouches[0].pageX - current.resizer.current.offsetLeft;
+          current.touchStartY = e.changedTouches[0].pageY - current.resizer.current.offsetLeft;
         },
       },
       ontouchend: {
@@ -2534,8 +2779,9 @@ const Window = self.Window = class Window {
           e.preventDefault();
           e.stopPropagation();
           if (!/^touch/.test(e.type)) return;
-          current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
-          current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
+          current.resizer.move(e.changedTouches[0].pageX - current.touchStartX,e.changedTouches[0].pageY - current.touchStartY);
+          //current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
+          //current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
         },
       },
     });
@@ -2591,12 +2837,20 @@ const Window = self.Window = class Window {
     this.bodybarria.style.width = "100%";
     this.bodybarria.style.height = "calc(100% - " + (this.titlebarObj.titlebar.style.height).replace(/px$/,"") + "px)";
     this.bodybarria.style.overflow = "hidden";
+    this.body.style.position = "relative";
     this.body.style.width = "100%";
     this.body.style.height = "100%";
     this.body.style.top = "0px";
     this.body.style.left = "0px";
+    if (this.parentObj instanceof Window) {
+      this.resizer.setBody(this.parentObj.body);
+    }else{
+      this.resizer.setBody(this.parentObj);
+    }
+    this.resizer.move(options.top || 0,options.left || 0);
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
+    this.window.dispatchEvent(new Event("resize"));
   }
   addChildWindow(window) {
     this.childWindow.push({window:window,zIndex:this.childWindow.length});
@@ -2609,6 +2863,7 @@ const Window = self.Window = class Window {
       this.parentObj.childWindow = this.parentObj.childWindow.filter(e => e.window !== this).sort((a,b) => a.zIndex - b.zIndex);
       this.parentObj.childWindow.push({window:this,zIndex:this.childWindow.length});
       for(let i=0;i<this.parentObj.childWindow.length;i++){
+        this.parentObj.childWindow[i].window.resizer.current.style.zIndex = i;
         this.parentObj.childWindow[i].window.window.style.zIndex = i;
         this.parentObj.childWindow[i].window.titlebarObj.unsetTop();
         this.parentObj.childWindow[i].zIndex = i;      

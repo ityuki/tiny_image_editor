@@ -20,34 +20,37 @@ const Window = self.Window = class Window {
     this.childSmallWindow = [];
     this.childWindow = [];
     this.window = this.main.window.document.createElement("div");
+    this.window.style.resize = "none";
+    let prealObj = this.parentObj;
+    if (prealObj instanceof Window) {
+      prealObj = prealObj.window;
+    }
+    this.resizer = new ObjectResizer(this.main,this.window,prealObj);
     if (options.fixsize) {
-      this.window.style.resize = "none";
+      // DO NOTHING
     }else{
-      this.window.style.resize = "both";
-      this.window.addEventListener("touchstart",function(e){
-        current.window.dispatchEvent(new Event("resizestart"));
-      });
+      this.resizer.setDiff(5,5);
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
     this.window.style.height = options.height || "100px";
-    this.window.style.top = options.top || "0px";
-    this.window.style.left = options.left || "0px";
+    this.window.style.top = "0px";
+    this.window.style.left = "0px";
     this.window.style.borderWidth = "1px";
     this.main.colorClass.setColor(this.window,"WindowBorderColor",this.id);
     this.window.style.borderStyle = "solid";
     if (parentObj) {
-      this.window.style.position = "absolute";
+      this.window.style.position = "relative";
       this.window.boxSize = "border-box";
       if (parentObj instanceof Window) {
-        this.parentObj.body.appendChild(this.window);
+        //this.parentObj.body.appendChild(this.window);
         this.parentObj.addChildWindow(this);
       }else{
-        this.parentObj.appendChild(this.window);
+        //this.parentObj.appendChild(this.window);
       }
     }else{
       this.window.style.position = "fixed";
-      this.main.window.document.body.appendChild(this.window);
+      //this.main.window.document.body.appendChild(this.window);
     }
     this.titlebar = this.main.window.document.createElement("div");
     this.tooltip = this.main.window.document.createElement("div");
@@ -65,8 +68,8 @@ const Window = self.Window = class Window {
     this.original = {
       width: this.window.style.width,
       height: this.window.style.height,
-      top: this.window.style.top,
-      left: this.window.style.left,
+      top: this.resizer.getPos().x,
+      left: this.resizer.getPos().y,
       lastMode: Window.WindowMode.Normal,
     };
     this.changeMode = function(mode) {
@@ -87,10 +90,14 @@ const Window = self.Window = class Window {
             current.titlebarObj.showMinIcon = true;
             current.titlebarObj.showFullscrIcon = true;
             current.titlebarObj.showTitle = true;
-            current.window.style.top = current.original.top;
-            current.window.style.left = current.original.left;
-            current.window.style.width = current.original.width;
-            current.window.style.height = current.original.height;
+            current.resizer.resizeInner(current.original.width,current.original.height);
+            current.resizer.move(current.original.left,current.original.top);
+            //current.window.style.width = current.original.width;
+            //current.window.style.height = current.original.height;
+            current.resizer.unsetMin();
+            current.resizer.resizeMax();
+            current.resizer.fit();
+            current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.Normal;
             current.setTop();
             break;
@@ -98,10 +105,12 @@ const Window = self.Window = class Window {
             current.titlebarObj.showMinIcon = true;
             current.titlebarObj.showFullscrIcon = false;
             current.titlebarObj.showTitle = true;
-            current.window.style.top = "0px";
-            current.window.style.left = "0px";
-            current.window.style.width = "calc(100%-2px)";
-            current.window.style.height = "calc(100%-2px)";
+            current.resizer.move(0,0);
+            current.resizer.current.style.width = "calc(100% - 2px)";
+            current.resizer.current.style.height = "calc(100% - 2px)";
+            current.resizer.unsetMin();
+            current.resizer.fit();
+            current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.FullScreen;
             current.setTop();
             break;
@@ -114,19 +123,23 @@ const Window = self.Window = class Window {
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = true;
           current.titlebarObj.showTitle = true;
-          current.window.style.top = current.original.top;
-          current.window.style.left = current.original.left;
-          current.window.style.width = current.original.width;
-          current.window.style.height = current.original.height;
+          current.resizer.resizeInner(current.original.width,current.original.height);
+          current.resizer.move(current.original.left,current.original.top);
+          current.window.dispatchEvent(new Event("resize"));
           current.original.lastMode = Window.WindowMode.Normal;
           current.setTop();
           break;
         case Window.WindowMode.FullScreen:
           current.original.lastMode = Window.WindowMode.FullScreen,
-          current.window.style.top = "0px";
-          current.window.style.left = "0px";
-          current.window.style.width = "calc(100% - 2px)";
-          current.window.style.height = "calc(100% - 2px)";
+          current.original.width = current.resizer.getPos().width;
+          current.original.height = current.resizer.getPos().height;
+          current.original.top = current.resizer.getPos().top;
+          current.original.left = current.resizer.getPos().left;
+          current.resizer.move(0,0);
+          current.resizer.current.style.width = "calc(100% - 2px)";
+          current.resizer.current.style.height = "calc(100% - 2px)";
+          current.resizer.fit();
+          current.window.dispatchEvent(new Event("resize"));
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = false;
           current.titlebarObj.showTitle = true;
@@ -134,29 +147,30 @@ const Window = self.Window = class Window {
           break;
         case Window.WindowMode.Minimized:
           if (current.original.lastMode === Window.WindowMode.Normal) {
-            current.window.style.top = current.original.top;
-            current.window.style.left = current.original.left;
-            current.window.style.width = current.original.width;
-            current.window.style.height = current.original.height;
+            current.original.width = current.resizer.getPos().width;
+            current.original.height = current.resizer.getPos().height;
+            current.original.top = current.resizer.getPos().top;
+            current.original.left = current.resizer.getPos().left;
             current.titlebarObj.showFullscrIcon = false;
           }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
             current.titlebarObj.showFullscrIcon = true;
           }
           current.original.lastMode = Window.WindowMode.Minimized;
-          current.window.style.top = "calc(100% - 20px)";
+          current.resizer.current.style.top = "calc(100% - 20px)";
           if (current.parentObj instanceof Window) {
             let idx = current.parentObj.childSmallWindow.indexOf(null);
             if (idx < 0) {
               idx = current.parentObj.childSmallWindow.length;
               current.parentObj.childSmallWindow.push(current);
             }
-            current.window.style.left = (idx * 60) + "px";
+            current.resizer.current.style.left = (idx * 60) + "px";
             current.parentObj.childSmallWindow[idx] = current;
           }else{
-            current.window.style.left = "0px";
+            current.resizer.current.style.left = "0px";
           }
           current.window.style.width = "60px";
           current.window.style.height = "20px";  
+          current.resizer.setMin();
           current.titlebarObj.showMinIcon = false;
           current.titlebarObj.showTitle = false;
           break;
@@ -261,12 +275,16 @@ const Window = self.Window = class Window {
             if (e.screenX === 0 && e.screenY === 0) {
               return;
             }
-            current.window.style.left     = current.window.offsetLeft + e.movementX + 'px';
-            current.window.style.top      = current.window.offsetTop  + e.movementY + 'px';
+            const rpos = current.resizer.getPos();
+            current.resizer.move(rpos.left + e.movementX,rpos.top + e.movementY);
+            //current.window.style.left     = current.window.offsetLeft + e.movementX + 'px';
+            //current.window.style.top      = current.window.offsetTop  + e.movementY + 'px';
             //current.window.style.position = 'absolute';
-            current.original.top = current.window.style.top;
-            current.original.left = current.window.style.left;
+            current.original.top = rpos.top + e.movementY;
+            current.original.left = rpos.left + e.movementX;
             current.titlebarObj.titlebar.setPointerCapture(e.pointerId);
+            e.preventDefault();
+            e.stopPropagation();
           }
         },
       },
@@ -275,8 +293,8 @@ const Window = self.Window = class Window {
           if (current.original.lastMode === Window.WindowMode.FullScreen) return;
           current.tooltip.style.display = "none";
           e.stopPropagation();
-          current.touchStartX = e.changedTouches[0].pageX - current.window.offsetLeft;
-          current.touchStartY = e.changedTouches[0].pageY - current.window.offsetLeft;
+          current.touchStartX = e.changedTouches[0].pageX - current.resizer.current.offsetLeft;
+          current.touchStartY = e.changedTouches[0].pageY - current.resizer.current.offsetLeft;
         },
       },
       ontouchend: {
@@ -320,8 +338,9 @@ const Window = self.Window = class Window {
           e.preventDefault();
           e.stopPropagation();
           if (!/^touch/.test(e.type)) return;
-          current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
-          current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
+          current.resizer.move(e.changedTouches[0].pageX - current.touchStartX,e.changedTouches[0].pageY - current.touchStartY);
+          //current.window.style.left = e.changedTouches[0].pageX - current.touchStartX + 'px';
+          //current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
         },
       },
     });
@@ -377,12 +396,20 @@ const Window = self.Window = class Window {
     this.bodybarria.style.width = "100%";
     this.bodybarria.style.height = "calc(100% - " + (this.titlebarObj.titlebar.style.height).replace(/px$/,"") + "px)";
     this.bodybarria.style.overflow = "hidden";
+    this.body.style.position = "relative";
     this.body.style.width = "100%";
     this.body.style.height = "100%";
     this.body.style.top = "0px";
     this.body.style.left = "0px";
+    if (this.parentObj instanceof Window) {
+      this.resizer.setBody(this.parentObj.body);
+    }else{
+      this.resizer.setBody(this.parentObj);
+    }
+    this.resizer.move(options.top || 0,options.left || 0);
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
+    this.window.dispatchEvent(new Event("resize"));
   }
   addChildWindow(window) {
     this.childWindow.push({window:window,zIndex:this.childWindow.length});
@@ -395,6 +422,7 @@ const Window = self.Window = class Window {
       this.parentObj.childWindow = this.parentObj.childWindow.filter(e => e.window !== this).sort((a,b) => a.zIndex - b.zIndex);
       this.parentObj.childWindow.push({window:this,zIndex:this.childWindow.length});
       for(let i=0;i<this.parentObj.childWindow.length;i++){
+        this.parentObj.childWindow[i].window.resizer.current.style.zIndex = i;
         this.parentObj.childWindow[i].window.window.style.zIndex = i;
         this.parentObj.childWindow[i].window.titlebarObj.unsetTop();
         this.parentObj.childWindow[i].zIndex = i;      
