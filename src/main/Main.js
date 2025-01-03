@@ -36,7 +36,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.202501031225",
+      title:"Test Window - v0.0.1.20250103-1250",
       width: 800 + "px",
       height: 600 + "px",
     });
