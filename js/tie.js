@@ -1855,7 +1855,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.current = this.main.window.document.createElement("div");
     this.current.style.position = "absolute";
     this.current.style.boxSizing = "border-box";
-    //this.current.style.backgroundColor = "rgba(0,220,0,1)";
+    this.current.style.backgroundColor = "rgba(0,220,0,1)";
     this.diffRight = 0;
     this.diffBottom = 0;
     this.current.appendChild(this.target);
@@ -1876,6 +1876,12 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.mmoveEvent = (e)=>{
       if (!this.clickCurrent){
         return;
+      }
+      if (e.touches){
+        if (e.touches.length > 1){
+          return;
+        }
+        e = e.touches[0];
       }
       if (e.target !== this.current){
         return;
@@ -1901,14 +1907,14 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
       this.clickCurrent = false;
     };
     this.downEvent = (e)=>{
-      if (e.target !== this.current){
-        return;
-      }
       if (e.touches){
         if (e.touches.length > 1){
           return;
         }
         e = e.touches[0];
+      }
+      if (e.target !== this.current){
+        return;
       }
       this.startx = e.pageX;
       this.starty = e.pageY;
@@ -1922,9 +1928,13 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
       this.clickCurrent = true;
       this.current.setPointerCapture(e.pointerId);
     };
-    this.current.addEventListener("touchstart",this.downEvent);
+    //this.current.addEventListener("touchstart",this.downEvent);
     this.current.addEventListener("pointerdown",this.downEvent);
-    //this.current.addEventListener("pointermove",this.mmoveEvent);
+    this.current.addEventListener('touchstart', e => {
+      if(e.cancelable){
+        e.preventDefault();
+      }
+    }, {capture: true, passive: false});
     //this.resizeMax();
     this.ismin = false;
   }
@@ -2470,7 +2480,7 @@ const Window = self.Window = class Window {
     if (options.fixsize) {
       // DO NOTHING
     }else{
-      this.resizer.setDiff(5,5);
+      this.resizer.setDiff(20,20);
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
