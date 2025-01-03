@@ -1931,6 +1931,9 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     //this.current.addEventListener("touchstart",this.downEvent);
     this.current.addEventListener("pointerdown",this.downEvent);
     this.current.addEventListener('touchstart', e => {
+      if (e.target !== this.current){
+        return;
+      }
       if(e.cancelable){
         e.preventDefault();
       }
