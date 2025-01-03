@@ -1855,7 +1855,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.current = this.main.window.document.createElement("div");
     this.current.style.position = "absolute";
     this.current.style.boxSizing = "border-box";
-    this.current.style.backgroundColor = "rgba(0,220,0,1)";
+    //this.current.style.backgroundColor = "rgba(0,220,0,1)";
     this.diffRight = 0;
     this.diffBottom = 0;
     this.current.appendChild(this.target);
