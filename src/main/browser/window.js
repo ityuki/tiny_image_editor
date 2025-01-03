@@ -29,7 +29,7 @@ const Window = self.Window = class Window {
     if (options.fixsize) {
       // DO NOTHING
     }else{
-      this.resizer.setDiff(20,20);
+      this.resizer.setDiff(5,5);
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
