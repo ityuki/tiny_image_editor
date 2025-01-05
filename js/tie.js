@@ -585,7 +585,7 @@ const Canvas = self.Canvas = class Canvas {
   
 
   static currentCanvasId = 0;
-  constructor(main, width, height) {
+  constructor(main, width, height,innerName) {
     this.main = main;
     Canvas.currentCanvasId += 1;
     this.id = Canvas.currentCanvasId;
@@ -593,6 +593,7 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.id = `tie_${this.main.tieName}_canvas_${this.id}`;
     this.raw.width = width;
     this.raw.height = height;
+    this.innerName = innerName || "";
     this.drawOverlapType = Canvas.OverlapType.SourceOver;
     this.drawAlpha = 1;
     this.resizeType = Canvas.ResizeType.TopLeft;
@@ -631,6 +632,9 @@ const Canvas = self.Canvas = class Canvas {
     if (dy === undefined){
       dy = sy;
     }
+    if (w === 0 || h === 0){
+      return false;
+    }
     const srcContext = this.raw.getContext('2d');
     const destContext = destCanvas.getContext('2d');
     const srcimg = srcContext.getImageData(sx,sy,w,h);
@@ -661,6 +665,9 @@ const Canvas = self.Canvas = class Canvas {
     }
     if (dy === undefined){
       dy = sy;
+    }
+    if (w === 0 || h === 0){
+      return false;
     }
     const srcContext = srcCanvas.getContext('2d');
     const destContext = this.raw.getContext('2d');
@@ -1444,7 +1451,8 @@ const Layer = self.Layer = class Layer {
     this.position = { x: 0, y: 0 };
     this.angle = 0;
     this.scale = 1;
-    this.canvas = new Canvas(main,width,height);
+    this.innerName = opt.innerName || "";
+    this.canvas = new Canvas(main,width,height,this.innerName);
     this.visible = true;
     this.syncPositionLayers = [];
     this.syncAngleLayers = [];
@@ -1473,6 +1481,9 @@ const Layer = self.Layer = class Layer {
     this.syncScaleLayers = this.syncScaleLayers.filter(l => l !== layer);
   }
   setPosition(x, y) {
+    if (this.position.x === x && this.position.y === y) {
+      return;
+    }
     this.position.x = x;
     this.position.y = y;
     for (let layer of this.syncPositionLayers) {
@@ -1480,6 +1491,9 @@ const Layer = self.Layer = class Layer {
     }
   }
   movePosition(x, y) {
+    if (this.position.x === x && this.position.y === y) {
+      return;
+    }
     this.position.x += x;
     this.position.y += y;
     for (let layer of this.syncPositionLayers) {
@@ -1487,12 +1501,18 @@ const Layer = self.Layer = class Layer {
     }
   }
   setAngle(angle) {
+    if (this.angle === angle) {
+      return;
+    }
     this.angle = angle % 360;
     for (let layer of this.syncAngleLayers) {
       layer.setAngle(this.angle);
     }
   }
   setScale(scale) {
+    if (this.scale === scale) {
+      return;
+    }
     this.scale = scale;
     for (let layer of this.syncScaleLayers) {
       layer.setScale(this.scale);
@@ -1594,7 +1614,7 @@ const Layer = self.Layer = class Layer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,scale,opt) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,scale,angle,opt) {
     if (!opt) {
       opt = {};
     }
@@ -1606,6 +1626,12 @@ const Layer = self.Layer = class Layer {
       if (opt.diffPos.y) {
         diffPos.y = opt.diffPos.y;
       }
+    }
+    if (opt.w) {
+      crect.w = opt.w;
+    }
+    if (opt.h) {
+      crect.h = opt.h;
     }
     let destHTMLCanvas = null;
     if (destCanvas instanceof Canvas) {
@@ -1622,11 +1648,14 @@ const Layer = self.Layer = class Layer {
     context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
     context.translate(diffPos.x,diffPos.y);
     context.scale(scale,scale);
+    context.translate(crect.w/2,crect.h/2);
+    context.rotate(angle * Math.PI / 180);
+    context.translate(-crect.w/2,-crect.h/2);
     context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,0,0,crect.w,crect.h);
     context.restore();
   }
   outputToCanvas(canvas,opt) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),this.scale,opt);
+    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),this.scale,this.angle,opt);
   }
   outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
@@ -1704,24 +1733,8 @@ const Layer = self.Layer = class Layer {
         tcanvas.resizeRect(0,0,this.canvas.getRect().w,this.canvas.getRect().h);
       }
       this.outputBelowLayers(tcanvas,{});
-      if (this.angle === 0) {
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},1,{});
-        tcanvas.rotateCenter(this.angle);
-        this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),this.scale,{});
-      }else {
-        const ow = tcanvas.getRect().w;
-        const oh = tcanvas.getRect().h;
-        tcanvas.setResizeType(Canvas.ResizeType.Center);
-        tcanvas.resize(s*2,s*2);
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},1,{});
-        tcanvas.rotateCenter(this.angle);
-        tcanvas.resizeRect(s-this.canvas.getRect().w/2-this.position.x,s-this.canvas.getRect().h/2-this.position.y,ow,oh);
-        if (this.writeClip === true) {
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
-        }else{
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
-        }
-      }
+      this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},1,0,{});
+      this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),this.scale,this.angle,{});
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);
@@ -2473,6 +2486,7 @@ const Window = self.Window = class Window {
     this.mode = options.mode || Window.WindowMode.Normal;
     this.childSmallWindow = [];
     this.childWindow = [];
+    this.innerName = options.innerName || "";
     this.window = this.main.window.document.createElement("div");
     this.window.style.resize = "none";
     let prealObj = this.parentObj;
@@ -3718,19 +3732,20 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.20250103-1250",
+      title:"Test Window - v0.0.1.20250105-1350",
       width: 800 + "px",
       height: 600 + "px",
     });
     this.targetObj.appendChild(this.baseCanvas);
 
     this.testWindow2 = new modules.browser.Window(this,this.testWindow,{
-      enableVScrollbar: null,
-      enableHScrollbar: null,
+      enableVScrollbar: false,
+      enableHScrollbar: false,
       fixsize: false,
       title:"Test Window2",
       width: 640 + "px",
       height: 480 + "px",
+      innerName: "testWindow2",
     });
     this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
       enableVScrollbar: null,
@@ -3759,6 +3774,34 @@ const Main = self.Main = class Main {
     this.baseLayer.addBelowLayer(this.layer);
     this.layer2 = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer2);
+
+    this.baseCanvas2 = this.window.document.createElement("canvas");
+    this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
+    this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
+    this.testWindow2.body.appendChild(this.baseCanvas2);
+    this.viewerLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "viewerLayer2"});
+    this.clearpatternLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "clearpatternLayer2"});
+    //this.viewerLayer2.addBelowLayer(this.clearpatternLayer2);
+    this.baseLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{writeClip: true,innerName: "baseLayer2"});
+    this.viewerLayer2.addBelowLayer(this.baseLayer2);
+    
+    this.layerMain = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "layerMain"});
+    this.baseLayer2.addBelowLayer(this.clearpatternLayer2);
+    this.baseLayer2.addBelowLayer(this.layerMain);
+    modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+    {
+      const ovserver = new ResizeObserver(() => {
+        if (this.testWindow2.body.getBoundingClientRect().width === 0 || this.testWindow2.body.getBoundingClientRect().height === 0){
+          return;
+        }
+        this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
+        this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
+        this.viewerLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
+        //modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+        this.viewerLayer2.outputCurrentLayer(this.baseCanvas2);
+      });
+      ovserver.observe(this.testWindow2.body);
+    }
 
     modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer.canvas);
     this.viewerLayer.outputCurrentLayer(this.baseCanvas);

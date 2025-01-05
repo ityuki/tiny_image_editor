@@ -19,6 +19,7 @@ const Window = self.Window = class Window {
     this.mode = options.mode || Window.WindowMode.Normal;
     this.childSmallWindow = [];
     this.childWindow = [];
+    this.innerName = options.innerName || "";
     this.window = this.main.window.document.createElement("div");
     this.window.style.resize = "none";
     let prealObj = this.parentObj;

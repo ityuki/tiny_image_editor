@@ -22,7 +22,8 @@ const Layer = self.Layer = class Layer {
     this.position = { x: 0, y: 0 };
     this.angle = 0;
     this.scale = 1;
-    this.canvas = new Canvas(main,width,height);
+    this.innerName = opt.innerName || "";
+    this.canvas = new Canvas(main,width,height,this.innerName);
     this.visible = true;
     this.syncPositionLayers = [];
     this.syncAngleLayers = [];
@@ -51,6 +52,9 @@ const Layer = self.Layer = class Layer {
     this.syncScaleLayers = this.syncScaleLayers.filter(l => l !== layer);
   }
   setPosition(x, y) {
+    if (this.position.x === x && this.position.y === y) {
+      return;
+    }
     this.position.x = x;
     this.position.y = y;
     for (let layer of this.syncPositionLayers) {
@@ -58,6 +62,9 @@ const Layer = self.Layer = class Layer {
     }
   }
   movePosition(x, y) {
+    if (this.position.x === x && this.position.y === y) {
+      return;
+    }
     this.position.x += x;
     this.position.y += y;
     for (let layer of this.syncPositionLayers) {
@@ -65,12 +72,18 @@ const Layer = self.Layer = class Layer {
     }
   }
   setAngle(angle) {
+    if (this.angle === angle) {
+      return;
+    }
     this.angle = angle % 360;
     for (let layer of this.syncAngleLayers) {
       layer.setAngle(this.angle);
     }
   }
   setScale(scale) {
+    if (this.scale === scale) {
+      return;
+    }
     this.scale = scale;
     for (let layer of this.syncScaleLayers) {
       layer.setScale(this.scale);
@@ -172,7 +185,7 @@ const Layer = self.Layer = class Layer {
     }
     return topLayers;
   }
-  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,scale,opt) {
+  outputToCanvasFromCanvas(srcCanvas,destCanvas,diffPos,scale,angle,opt) {
     if (!opt) {
       opt = {};
     }
@@ -184,6 +197,12 @@ const Layer = self.Layer = class Layer {
       if (opt.diffPos.y) {
         diffPos.y = opt.diffPos.y;
       }
+    }
+    if (opt.w) {
+      crect.w = opt.w;
+    }
+    if (opt.h) {
+      crect.h = opt.h;
     }
     let destHTMLCanvas = null;
     if (destCanvas instanceof Canvas) {
@@ -200,11 +219,14 @@ const Layer = self.Layer = class Layer {
     context.globalCompositeOperation = srcCanvas.globalCompositeOperation;
     context.translate(diffPos.x,diffPos.y);
     context.scale(scale,scale);
+    context.translate(crect.w/2,crect.h/2);
+    context.rotate(angle * Math.PI / 180);
+    context.translate(-crect.w/2,-crect.h/2);
     context.drawImage(srcCanvas.getHTMLCanvas(),0,0,crect.w,crect.h,0,0,crect.w,crect.h);
     context.restore();
   }
   outputToCanvas(canvas,opt) {
-    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),this.scale,opt);
+    this.outputToCanvasFromCanvas(this.canvas,canvas,structuredClone(this.position),this.scale,this.angle,opt);
   }
   outputBelowLayers(canvas,opt) {
     for (let layer of this.belowLayers) {
@@ -282,24 +304,8 @@ const Layer = self.Layer = class Layer {
         tcanvas.resizeRect(0,0,this.canvas.getRect().w,this.canvas.getRect().h);
       }
       this.outputBelowLayers(tcanvas,{});
-      if (this.angle === 0) {
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},1,{});
-        tcanvas.rotateCenter(this.angle);
-        this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),this.scale,{});
-      }else {
-        const ow = tcanvas.getRect().w;
-        const oh = tcanvas.getRect().h;
-        tcanvas.setResizeType(Canvas.ResizeType.Center);
-        tcanvas.resize(s*2,s*2);
-        this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:s-this.canvas.getRect().w/2,y:s-this.canvas.getRect().h/2},1,{});
-        tcanvas.rotateCenter(this.angle);
-        tcanvas.resizeRect(s-this.canvas.getRect().w/2-this.position.x,s-this.canvas.getRect().h/2-this.position.y,ow,oh);
-        if (this.writeClip === true) {
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
-        }else{
-          this.outputToCanvasFromCanvas(tcanvas,canvas,{x:0,y:0},this.scale,{});
-        }
-      }
+      this.outputToCanvasFromCanvas(this.canvas,tcanvas,{x:0,y:0},1,0,{});
+      this.outputToCanvasFromCanvas(tcanvas,canvas,structuredClone(this.position),this.scale,this.angle,{});
     }
     if (this.layerChain.next) {
       this.layerChain.next.outputCurrentLayer(canvas);

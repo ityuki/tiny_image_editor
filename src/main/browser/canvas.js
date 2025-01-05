@@ -44,7 +44,7 @@ const Canvas = self.Canvas = class Canvas {
   
 
   static currentCanvasId = 0;
-  constructor(main, width, height) {
+  constructor(main, width, height,innerName) {
     this.main = main;
     Canvas.currentCanvasId += 1;
     this.id = Canvas.currentCanvasId;
@@ -52,6 +52,7 @@ const Canvas = self.Canvas = class Canvas {
     this.raw.id = `tie_${this.main.tieName}_canvas_${this.id}`;
     this.raw.width = width;
     this.raw.height = height;
+    this.innerName = innerName || "";
     this.drawOverlapType = Canvas.OverlapType.SourceOver;
     this.drawAlpha = 1;
     this.resizeType = Canvas.ResizeType.TopLeft;
@@ -90,6 +91,9 @@ const Canvas = self.Canvas = class Canvas {
     if (dy === undefined){
       dy = sy;
     }
+    if (w === 0 || h === 0){
+      return false;
+    }
     const srcContext = this.raw.getContext('2d');
     const destContext = destCanvas.getContext('2d');
     const srcimg = srcContext.getImageData(sx,sy,w,h);
@@ -120,6 +124,9 @@ const Canvas = self.Canvas = class Canvas {
     }
     if (dy === undefined){
       dy = sy;
+    }
+    if (w === 0 || h === 0){
+      return false;
     }
     const srcContext = srcCanvas.getContext('2d');
     const destContext = this.raw.getContext('2d');

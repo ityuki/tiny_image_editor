@@ -36,19 +36,20 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.20250103-1250",
+      title:"Test Window - v0.0.1.20250105-1350",
       width: 800 + "px",
       height: 600 + "px",
     });
     this.targetObj.appendChild(this.baseCanvas);
 
     this.testWindow2 = new modules.browser.Window(this,this.testWindow,{
-      enableVScrollbar: null,
-      enableHScrollbar: null,
+      enableVScrollbar: false,
+      enableHScrollbar: false,
       fixsize: false,
       title:"Test Window2",
       width: 640 + "px",
       height: 480 + "px",
+      innerName: "testWindow2",
     });
     this.testWindow3 = new modules.browser.Window(this,this.testWindow,{
       enableVScrollbar: null,
@@ -77,6 +78,34 @@ const Main = self.Main = class Main {
     this.baseLayer.addBelowLayer(this.layer);
     this.layer2 = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
     this.baseLayer.addBelowLayer(this.layer2);
+
+    this.baseCanvas2 = this.window.document.createElement("canvas");
+    this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
+    this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
+    this.testWindow2.body.appendChild(this.baseCanvas2);
+    this.viewerLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "viewerLayer2"});
+    this.clearpatternLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "clearpatternLayer2"});
+    //this.viewerLayer2.addBelowLayer(this.clearpatternLayer2);
+    this.baseLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{writeClip: true,innerName: "baseLayer2"});
+    this.viewerLayer2.addBelowLayer(this.baseLayer2);
+    
+    this.layerMain = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "layerMain"});
+    this.baseLayer2.addBelowLayer(this.clearpatternLayer2);
+    this.baseLayer2.addBelowLayer(this.layerMain);
+    modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+    {
+      const ovserver = new ResizeObserver(() => {
+        if (this.testWindow2.body.getBoundingClientRect().width === 0 || this.testWindow2.body.getBoundingClientRect().height === 0){
+          return;
+        }
+        this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
+        this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
+        this.viewerLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
+        //modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+        this.viewerLayer2.outputCurrentLayer(this.baseCanvas2);
+      });
+      ovserver.observe(this.testWindow2.body);
+    }
 
     modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer.canvas);
     this.viewerLayer.outputCurrentLayer(this.baseCanvas);
