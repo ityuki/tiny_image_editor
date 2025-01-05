@@ -467,6 +467,43 @@ const canvasMethod = self.canvasMethod = (function(){
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.canvasMethod";
 // ================================================
+// module: browser.canvasMethod , from: fillBackgroundPattern.js
+// ================================================
+const fillBackgroundPattern = self.fillBackgroundPattern = function fillBackgroundPattern(canvas, opt) {
+  if (!opt) {
+    opt = {};
+  }
+  if (!canvas) {
+    return;
+  }
+  const rawCanvas = parent.Canvas.getRawCanvas(canvas);
+  if (!rawCanvas) {
+    return;
+  }
+  const context = rawCanvas.getContext('2d');
+  // fill white
+  context.fillStyle = 'rgba(255, 255, 255, 1)';
+  context.fillRect(0, 0, rawCanvas.width, rawCanvas.height);
+  const len = 2;
+  for(let x=0;x<rawCanvas.width;x+=len){
+    for(let y=0;y<rawCanvas.height;y+=len){
+      if (x % (len*2) == y % (len*2)) {
+        continue;
+      }
+      // clear pattern
+      context.fillStyle = 'rgba(200, 200, 200, 1)';
+      context.beginPath();
+      context.moveTo(x,y);
+      context.lineTo(x+len,y);
+      context.lineTo(x+len,y+len);
+      context.lineTo(x,y+len);
+      context.closePath();
+      context.fill();
+    }
+  }
+}
+
+// ================================================
 // module: browser.canvasMethod , from: fillClearPattern.js
 // ================================================
 const fillClearPattern = self.fillClearPattern = function fillClearPattern(canvas, opt) {
@@ -3779,11 +3816,13 @@ const Main = self.Main = class Main {
     this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
     this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
     this.testWindow2.body.appendChild(this.baseCanvas2);
+    this.backgroundLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "backgroundLayer2"});
     this.viewerLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "viewerLayer2"});
+    this.backgroundLayer2.insertLastLayer(this.viewerLayer2);
     this.clearpatternLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "clearpatternLayer2"});
     //this.viewerLayer2.addBelowLayer(this.clearpatternLayer2);
     this.baseLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{writeClip: true,innerName: "baseLayer2"});
-    this.viewerLayer2.addBelowLayer(this.baseLayer2);
+    this.baseLayer2.insertLastLayer(this.backgroundLayer2);
     
     this.layerMain = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "layerMain"});
     this.baseLayer2.addBelowLayer(this.clearpatternLayer2);
@@ -3797,7 +3836,8 @@ const Main = self.Main = class Main {
         this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
         this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
         this.viewerLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
-        //modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+        this.backgroundLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
+        modules.browser.canvasMethod.fillBackgroundPattern(this.backgroundLayer2.canvas);
         this.viewerLayer2.outputCurrentLayer(this.baseCanvas2);
       });
       ovserver.observe(this.testWindow2.body);

@@ -83,11 +83,13 @@ const Main = self.Main = class Main {
     this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
     this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
     this.testWindow2.body.appendChild(this.baseCanvas2);
+    this.backgroundLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "backgroundLayer2"});
     this.viewerLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "viewerLayer2"});
+    this.backgroundLayer2.insertLastLayer(this.viewerLayer2);
     this.clearpatternLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "clearpatternLayer2"});
     //this.viewerLayer2.addBelowLayer(this.clearpatternLayer2);
     this.baseLayer2 = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{writeClip: true,innerName: "baseLayer2"});
-    this.viewerLayer2.addBelowLayer(this.baseLayer2);
+    this.baseLayer2.insertLastLayer(this.backgroundLayer2);
     
     this.layerMain = new modules.browser.Layer(this,this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height,{innerName: "layerMain"});
     this.baseLayer2.addBelowLayer(this.clearpatternLayer2);
@@ -101,7 +103,8 @@ const Main = self.Main = class Main {
         this.baseCanvas2.width = this.testWindow2.body.getBoundingClientRect().width;
         this.baseCanvas2.height = this.testWindow2.body.getBoundingClientRect().height;
         this.viewerLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
-        //modules.browser.canvasMethod.fillClearPattern(this.clearpatternLayer2.canvas);
+        this.backgroundLayer2.getCanvas().resize(this.testWindow2.body.getBoundingClientRect().width, this.testWindow2.body.getBoundingClientRect().height);
+        modules.browser.canvasMethod.fillBackgroundPattern(this.backgroundLayer2.canvas);
         this.viewerLayer2.outputCurrentLayer(this.baseCanvas2);
       });
       ovserver.observe(this.testWindow2.body);
