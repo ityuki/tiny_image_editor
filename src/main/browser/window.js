@@ -22,6 +22,7 @@ const Window = self.Window = class Window {
     this.innerName = options.innerName || "";
     this.window = this.main.window.document.createElement("div");
     this.window.style.resize = "none";
+    this.window.style.cursor = "auto";
     let prealObj = this.parentObj;
     if (prealObj instanceof Window) {
       prealObj = prealObj.window;

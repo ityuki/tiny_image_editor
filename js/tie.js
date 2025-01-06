@@ -1905,6 +1905,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.current = this.main.window.document.createElement("div");
     this.current.style.position = "absolute";
     this.current.style.boxSizing = "border-box";
+    this.current.style.cursor = "nwse-resize";
     //this.current.style.backgroundColor = "rgba(0,220,0,1)";
     this.diffRight = 0;
     this.diffBottom = 0;
@@ -2526,6 +2527,7 @@ const Window = self.Window = class Window {
     this.innerName = options.innerName || "";
     this.window = this.main.window.document.createElement("div");
     this.window.style.resize = "none";
+    this.window.style.cursor = "auto";
     let prealObj = this.parentObj;
     if (prealObj instanceof Window) {
       prealObj = prealObj.window;
@@ -3769,7 +3771,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.20250105-1350",
+      title:"Test Window - v0.0.1.20250106-1130",
       width: 800 + "px",
       height: 600 + "px",
     });
