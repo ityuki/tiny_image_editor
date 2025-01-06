@@ -7,6 +7,7 @@ const TitleBar = self.TitleBar = class TitleBar {
       options = {};
     }
     this.main = main;
+    this.options = options;
     this.visible = true;
     this.parentObj = parentObj || main.targetObj;
     this.height = 20;
@@ -347,17 +348,22 @@ const TitleBar = self.TitleBar = class TitleBar {
     } else {
       this.minitem.style.display = "block";
     }
-    if (!this.showFullscrIcon) {
-      this.normalscritem.style.display = "block";
+    if (this.options.fixsize) {
+      this.normalscritem.style.display = "none";
       this.fullscritem.style.display = "none";
     }else{
-      this.normalscritem.style.display = "none";
-      this.fullscritem.style.display = "block";
+      if (!this.showFullscrIcon) {
+        this.normalscritem.style.display = "block";
+        this.fullscritem.style.display = "none";
+      }else{
+        this.normalscritem.style.display = "none";
+        this.fullscritem.style.display = "block";
+      }
     }
     if (!this.showCloseIcon) {
       this.closeitem.style.display = "none";
     }else{
       this.closeitem.style.display = "block";
-    }
-  }
+    }  
+}
 }

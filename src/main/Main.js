@@ -64,7 +64,88 @@ const Main = self.Main = class Main {
       top: 20 + "px",
       left: 20 + "px",
     });
+    this.eyesWindow = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: false,
+      enableHScrollbar: false,
+      fixsize: true,
+      title:"eyes",
+      width: 100 + "px",
+      height: 100 + "px",
+      top: 0 + "px",
+      left: 800-100 + "px",
+    });
     //this.testWindow.body.appendChild(this.testWindow2);
+    this.eyesCanvas = this.window.document.createElement("canvas");
+    this.eyesCanvas.width = this.eyesWindow.body.getBoundingClientRect().width;
+    this.eyesCanvas.height = this.eyesWindow.body.getBoundingClientRect().height;
+    this.eyesWindow.body.appendChild(this.eyesCanvas);
+    this.bodyObj.addEventListener("mousemove", (e) => {
+      const ptx = e.pageX;
+      const pty = e.pageY;
+      const ex = this.eyesWindow.body.getBoundingClientRect().left;
+      const ey = this.eyesWindow.body.getBoundingClientRect().top;
+      const pw = this.baseCanvas.getBoundingClientRect().width;
+      const ph = this.baseCanvas.getBoundingClientRect().height;
+      const width = this.eyesCanvas.width;
+      const height = this.eyesCanvas.height;
+      const ctx = this.eyesCanvas.getContext("2d");
+      // clear
+      ctx.clearRect(0,0,width,height);      
+      // left eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(width/4,height/2, width/4-2, height/2-2, 0, 2 * Math.PI,false);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+      // right eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(width*3/4,height/2, width/4-2, height/2-2, 0, 2 * Math.PI,false);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+      // left eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = "black";
+      let dx = ptx - ex - width/4;
+      let dy = pty - ey - height/2;
+      let r = Math.sqrt(dx*dx+dy*dy);
+      let x =(r<10) ? dx: dx*10/r;
+      let y =(r<10) ? dy: dy*10/r;
+      let s = 1.5*(pw+ph)/r;
+      if (s < 3){
+        s = 3;
+      }
+      if (s > 8){
+        s = 8;
+      }
+      ctx.arc(width/4+x,height/2+y, s, 0, 2 * Math.PI,false);
+      ctx.fill();
+      ctx.restore();
+      // right eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = "black";
+      dx = ptx - ex - width*3/4;
+      dy = pty - ey - height/2;
+      r = Math.sqrt(dx*dx+dy*dy);
+      x =(r<10) ? dx: dx*10/r;
+      y =(r<10) ? dy: dy*10/r;
+      s = 1.5*(pw+ph)/r;
+      if (s < 3){
+        s = 3;
+      }
+      if (s > 8){
+        s = 8;
+      }
+      ctx.arc(width*3/4+x,height/2+y, s, 0, 2 * Math.PI,false);
+      ctx.fill();
+      ctx.restore();
+    });
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
 

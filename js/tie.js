@@ -2182,6 +2182,7 @@ const TitleBar = self.TitleBar = class TitleBar {
       options = {};
     }
     this.main = main;
+    this.options = options;
     this.visible = true;
     this.parentObj = parentObj || main.targetObj;
     this.height = 20;
@@ -2522,19 +2523,24 @@ const TitleBar = self.TitleBar = class TitleBar {
     } else {
       this.minitem.style.display = "block";
     }
-    if (!this.showFullscrIcon) {
-      this.normalscritem.style.display = "block";
+    if (this.options.fixsize) {
+      this.normalscritem.style.display = "none";
       this.fullscritem.style.display = "none";
     }else{
-      this.normalscritem.style.display = "none";
-      this.fullscritem.style.display = "block";
+      if (!this.showFullscrIcon) {
+        this.normalscritem.style.display = "block";
+        this.fullscritem.style.display = "none";
+      }else{
+        this.normalscritem.style.display = "none";
+        this.fullscritem.style.display = "block";
+      }
     }
     if (!this.showCloseIcon) {
       this.closeitem.style.display = "none";
     }else{
       this.closeitem.style.display = "block";
-    }
-  }
+    }  
+}
 }
 
 // ================================================
@@ -2616,8 +2622,8 @@ const Window = self.Window = class Window {
     this.original = {
       width: this.window.style.width,
       height: this.window.style.height,
-      top: this.resizer.getPos().x,
-      left: this.resizer.getPos().y,
+      top: this.resizer.getPos().y,
+      left: this.resizer.getPos().x,
       lastMode: Window.WindowMode.Normal,
     };
     this.parentResize = function(){
@@ -2631,7 +2637,7 @@ const Window = self.Window = class Window {
         current.window.dispatchEvent(new Event("resize"));
       }
       for(let child of current.childWindow){
-        child.resizeParent();
+        child.parentResize();
       }
     }
     if (this.parentObj !== null) {
@@ -2931,6 +2937,7 @@ const Window = self.Window = class Window {
           //current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
         },
       },
+      fixsize: options.fixsize || false,
     });
     this.bodybarria = this.main.window.document.createElement("div");
     this.bodybarria.addEventListener("click",function(e){
@@ -2994,7 +3001,7 @@ const Window = self.Window = class Window {
     }else{
       this.resizer.setBody(this.parentObj);
     }
-    this.resizer.move(options.top || 0,options.left || 0);
+    this.resizer.move(options.left || 0,options.top || 0);
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
     this.window.dispatchEvent(new Event("resize"));
@@ -3854,7 +3861,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250106-2053",
+      title:"Test Window - v"+this.version+".20250106-2256",
       width: 800 + "px",
       height: 600 + "px",
     });
@@ -3880,7 +3887,88 @@ const Main = self.Main = class Main {
       top: 20 + "px",
       left: 20 + "px",
     });
+    this.eyesWindow = new modules.browser.Window(this,this.testWindow,{
+      enableVScrollbar: false,
+      enableHScrollbar: false,
+      fixsize: true,
+      title:"eyes",
+      width: 100 + "px",
+      height: 100 + "px",
+      top: 0 + "px",
+      left: 800-100 + "px",
+    });
     //this.testWindow.body.appendChild(this.testWindow2);
+    this.eyesCanvas = this.window.document.createElement("canvas");
+    this.eyesCanvas.width = this.eyesWindow.body.getBoundingClientRect().width;
+    this.eyesCanvas.height = this.eyesWindow.body.getBoundingClientRect().height;
+    this.eyesWindow.body.appendChild(this.eyesCanvas);
+    this.bodyObj.addEventListener("mousemove", (e) => {
+      const ptx = e.pageX;
+      const pty = e.pageY;
+      const ex = this.eyesWindow.body.getBoundingClientRect().left;
+      const ey = this.eyesWindow.body.getBoundingClientRect().top;
+      const pw = this.baseCanvas.getBoundingClientRect().width;
+      const ph = this.baseCanvas.getBoundingClientRect().height;
+      const width = this.eyesCanvas.width;
+      const height = this.eyesCanvas.height;
+      const ctx = this.eyesCanvas.getContext("2d");
+      // clear
+      ctx.clearRect(0,0,width,height);      
+      // left eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(width/4,height/2, width/4-2, height/2-2, 0, 2 * Math.PI,false);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+      // right eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(width*3/4,height/2, width/4-2, height/2-2, 0, 2 * Math.PI,false);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+      // left eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = "black";
+      let dx = ptx - ex - width/4;
+      let dy = pty - ey - height/2;
+      let r = Math.sqrt(dx*dx+dy*dy);
+      let x =(r<10) ? dx: dx*10/r;
+      let y =(r<10) ? dy: dy*10/r;
+      let s = 1.5*(pw+ph)/r;
+      if (s < 3){
+        s = 3;
+      }
+      if (s > 8){
+        s = 8;
+      }
+      ctx.arc(width/4+x,height/2+y, s, 0, 2 * Math.PI,false);
+      ctx.fill();
+      ctx.restore();
+      // right eye
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = "black";
+      dx = ptx - ex - width*3/4;
+      dy = pty - ey - height/2;
+      r = Math.sqrt(dx*dx+dy*dy);
+      x =(r<10) ? dx: dx*10/r;
+      y =(r<10) ? dy: dy*10/r;
+      s = 1.5*(pw+ph)/r;
+      if (s < 3){
+        s = 3;
+      }
+      if (s > 8){
+        s = 8;
+      }
+      ctx.arc(width*3/4+x,height/2+y, s, 0, 2 * Math.PI,false);
+      ctx.fill();
+      ctx.restore();
+    });
 
     this.viewerLayer = new modules.browser.Layer(this,this.defaultLayer.width,this.defaultLayer.height);
 

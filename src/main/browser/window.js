@@ -74,8 +74,8 @@ const Window = self.Window = class Window {
     this.original = {
       width: this.window.style.width,
       height: this.window.style.height,
-      top: this.resizer.getPos().x,
-      left: this.resizer.getPos().y,
+      top: this.resizer.getPos().y,
+      left: this.resizer.getPos().x,
       lastMode: Window.WindowMode.Normal,
     };
     this.parentResize = function(){
@@ -89,7 +89,7 @@ const Window = self.Window = class Window {
         current.window.dispatchEvent(new Event("resize"));
       }
       for(let child of current.childWindow){
-        child.resizeParent();
+        child.parentResize();
       }
     }
     if (this.parentObj !== null) {
@@ -389,6 +389,7 @@ const Window = self.Window = class Window {
           //current.window.style.top = e.changedTouches[0].pageY - current.touchStartY + 'px';
         },
       },
+      fixsize: options.fixsize || false,
     });
     this.bodybarria = this.main.window.document.createElement("div");
     this.bodybarria.addEventListener("click",function(e){
@@ -452,7 +453,7 @@ const Window = self.Window = class Window {
     }else{
       this.resizer.setBody(this.parentObj);
     }
-    this.resizer.move(options.top || 0,options.left || 0);
+    this.resizer.move(options.left || 0,options.top || 0);
     //this.body.style.overflow = "hidden";
     this.main.colorClass.setColorClass(this.body,"WindowBackgroundColor",this.id);
     this.window.dispatchEvent(new Event("resize"));
