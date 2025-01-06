@@ -15,8 +15,11 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.target.style.position = "absolute";
     this.target.style.left = "0px";
     this.target.style.top = "0px";
-    this.parent.addEventListener("resize",(e)=>{
+    this.current.addEventListener("resize",(e)=>{
       this.resizeMax();
+    });
+    this.parent.addEventListener("resize",(e)=>{
+      //this.resizeMax();
     });
     this.target.addEventListener("resize",(e)=>{ 
       this.resizeMax();
@@ -164,6 +167,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
   resizeInner(w,h){
     this.target.style.width = w + "px";
     this.target.style.height = h + "px";
+    this.target.dispatchEvent(new Event("resize"));
     this.resizeMax();
   }
   resizeMax(){
@@ -189,6 +193,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     }
     this.current.style.width = w + "px";
     this.current.style.height = h + "px";
+    //this.current.dispatchEvent(new Event("resize"));
     this.fit();
   }
   fit(){
@@ -206,29 +211,35 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     }
     let cwitdh = crect.width;
     let width = crect.width - this.diffRight;
-    if (crect.offsetLeft + width > brect.width - 3){
-      width = brect.width - crect.offsetLeft -3;
-      cwitdh = width + this.diffRight;
+    if (this.diffRight > 0){
+      if (crect.offsetLeft + width > brect.width){
+        width = brect.width - crect.offsetLeft;
+        cwitdh = width + this.diffRight;
+      }  
     }
     if (width < 0){
       width = 0;
     }
     let chight = crect.height;
     let height = crect.height - this.diffBottom;
-    if (crect.offsetTop + height > brect.height -3){
-      height = brect.height - crect.offsetTop -3;
-      chight = height + this.diffBottom;
-    }
+    if (this.diffBottom > 0){
+      if (crect.offsetTop + height > brect.height){
+        height = brect.height - crect.offsetTop;
+        chight = height + this.diffBottom;
+      }
+   }
     if (height < 0){
       height = 0;
     }
     if (crect.width != cwitdh || crect.height != chight){
       this.current.style.width = cwitdh + "px";
       this.current.style.height = chight + "px";
+      //this.current.dispatchEvent(new Event("resize"));
     }
     if (trect.width != width || trect.height != height){
       this.target.style.width = width + "px";
       this.target.style.height = height + "px";
+      //this.target.dispatchEvent(new Event("resize"));
     }
     this.target.style.left = "0px";
     this.target.style.top = "0px";

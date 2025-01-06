@@ -1913,8 +1913,11 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     this.target.style.position = "absolute";
     this.target.style.left = "0px";
     this.target.style.top = "0px";
-    this.parent.addEventListener("resize",(e)=>{
+    this.current.addEventListener("resize",(e)=>{
       this.resizeMax();
+    });
+    this.parent.addEventListener("resize",(e)=>{
+      //this.resizeMax();
     });
     this.target.addEventListener("resize",(e)=>{ 
       this.resizeMax();
@@ -2062,6 +2065,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
   resizeInner(w,h){
     this.target.style.width = w + "px";
     this.target.style.height = h + "px";
+    this.target.dispatchEvent(new Event("resize"));
     this.resizeMax();
   }
   resizeMax(){
@@ -2087,6 +2091,7 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     }
     this.current.style.width = w + "px";
     this.current.style.height = h + "px";
+    //this.current.dispatchEvent(new Event("resize"));
     this.fit();
   }
   fit(){
@@ -2104,29 +2109,35 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
     }
     let cwitdh = crect.width;
     let width = crect.width - this.diffRight;
-    if (crect.offsetLeft + width > brect.width - 3){
-      width = brect.width - crect.offsetLeft -3;
-      cwitdh = width + this.diffRight;
+    if (this.diffRight > 0){
+      if (crect.offsetLeft + width > brect.width){
+        width = brect.width - crect.offsetLeft;
+        cwitdh = width + this.diffRight;
+      }  
     }
     if (width < 0){
       width = 0;
     }
     let chight = crect.height;
     let height = crect.height - this.diffBottom;
-    if (crect.offsetTop + height > brect.height -3){
-      height = brect.height - crect.offsetTop -3;
-      chight = height + this.diffBottom;
-    }
+    if (this.diffBottom > 0){
+      if (crect.offsetTop + height > brect.height){
+        height = brect.height - crect.offsetTop;
+        chight = height + this.diffBottom;
+      }
+   }
     if (height < 0){
       height = 0;
     }
     if (crect.width != cwitdh || crect.height != chight){
       this.current.style.width = cwitdh + "px";
       this.current.style.height = chight + "px";
+      //this.current.dispatchEvent(new Event("resize"));
     }
     if (trect.width != width || trect.height != height){
       this.target.style.width = width + "px";
       this.target.style.height = height + "px";
+      //this.target.dispatchEvent(new Event("resize"));
     }
     this.target.style.left = "0px";
     this.target.style.top = "0px";
@@ -2533,10 +2544,12 @@ const Window = self.Window = class Window {
       prealObj = prealObj.window;
     }
     this.resizer = new ObjectResizer(this.main,this.window,prealObj);
+    this.resizerW = 5;
+    this.resizerH = 5;
     if (options.fixsize) {
       // DO NOTHING
     }else{
-      this.resizer.setDiff(5,5);
+      this.resizer.setDiff(this.resizerW,this.resizerH);
     }
     this.window.style.overflow = "hidden";
     this.window.style.width = options.width || "200px";
@@ -2579,6 +2592,27 @@ const Window = self.Window = class Window {
       left: this.resizer.getPos().y,
       lastMode: Window.WindowMode.Normal,
     };
+    this.parentResize = function(){
+      if (current.mode === Window.WindowMode.FullScreen) {
+        current.resizer.current.style.width = "100%";
+        current.resizer.current.style.height = "100%";
+        current.resizer.target.style.width = "100%";
+        current.resizer.target.style.height = "100%";
+        current.resizer.resizeMax();
+        current.resizer.current.dispatchEvent(new Event("resize"));
+        current.window.dispatchEvent(new Event("resize"));
+      }
+      for(let child of current.childWindow){
+        child.resizeParent();
+      }
+    }
+    if (this.parentObj !== null) {
+      if (this.parentObj instanceof Window) {
+        this.parentObj.window.addEventListener("resize",this.parentResize);
+      }else{
+        this.parentObj.addEventListener("resize",this.parentResize);
+      }
+    }
     this.changeMode = function(mode) {
       if (current.original.lastMode === Window.WindowMode.Minimized) {
         if (current.parentObj instanceof Window) {
@@ -2603,7 +2637,8 @@ const Window = self.Window = class Window {
             //current.window.style.height = current.original.height;
             current.resizer.unsetMin();
             current.resizer.resizeMax();
-            current.resizer.fit();
+            current.resizer.setDiff(current.resizerW,current.resizerH);
+            current.resizer.current.dispatchEvent(new Event("resize"));
             current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.Normal;
             current.setTop();
@@ -2612,16 +2647,22 @@ const Window = self.Window = class Window {
             current.titlebarObj.showMinIcon = true;
             current.titlebarObj.showFullscrIcon = false;
             current.titlebarObj.showTitle = true;
+            current.resizer.current.style.width = "100%";
+            current.resizer.current.style.height = "100%";
+            current.resizer.target.style.width = "100%";
+            current.resizer.target.style.height = "100%";
             current.resizer.move(0,0);
-            current.resizer.current.style.width = "calc(100% - 2px)";
-            current.resizer.current.style.height = "calc(100% - 2px)";
+            current.resizer.setDiff(0,0);
+            current.resizer.resizeMax();
             current.resizer.unsetMin();
-            current.resizer.fit();
+            //current.resizer.fit();
+            current.resizer.current.dispatchEvent(new Event("resize"));
             current.window.dispatchEvent(new Event("resize"));
             current.original.lastMode = Window.WindowMode.FullScreen;
             current.setTop();
             break;
         }
+        current.mode = mode;
         current.titlebarObj.update();
         return;
       }
@@ -2630,8 +2671,10 @@ const Window = self.Window = class Window {
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = true;
           current.titlebarObj.showTitle = true;
+          current.resizer.setDiff(current.resizerW,current.resizerH);
           current.resizer.resizeInner(current.original.width,current.original.height);
           current.resizer.move(current.original.left,current.original.top);
+          current.resizer.current.dispatchEvent(new Event("resize"));
           current.window.dispatchEvent(new Event("resize"));
           current.original.lastMode = Window.WindowMode.Normal;
           current.setTop();
@@ -2642,10 +2685,15 @@ const Window = self.Window = class Window {
           current.original.height = current.resizer.getPos().height;
           current.original.top = current.resizer.getPos().top;
           current.original.left = current.resizer.getPos().left;
+          current.resizer.current.style.width = "100%";
+          current.resizer.current.style.height = "100%";
+          current.resizer.target.style.width = "100%";
+          current.resizer.target.style.height = "100%";
           current.resizer.move(0,0);
-          current.resizer.current.style.width = "calc(100% - 2px)";
-          current.resizer.current.style.height = "calc(100% - 2px)";
-          current.resizer.fit();
+          current.resizer.setDiff(0,0);
+          current.resizer.resizeMax();
+          current.resizer.current.dispatchEvent(new Event("resize"));
+          //current.resizer.fit();
           current.window.dispatchEvent(new Event("resize"));
           current.titlebarObj.showMinIcon = true;
           current.titlebarObj.showFullscrIcon = false;
@@ -2677,12 +2725,15 @@ const Window = self.Window = class Window {
           }
           current.window.style.width = "60px";
           current.window.style.height = "20px";  
+          current.resizer.setDiff(0,0);
           current.resizer.setMin();
+          current.resizer.current.dispatchEvent(new Event("resize"));
           current.titlebarObj.showMinIcon = false;
           current.titlebarObj.showTitle = false;
           break;
       }
       current.titlebarObj.update();
+      current.mode = mode;
     };
     this.titlebarObj = new TitleBar(this.main,this.titlebar,{
       title: options.title || "Window",
