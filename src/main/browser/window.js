@@ -19,15 +19,17 @@ const Window = self.Window = class Window {
     this.mode = options.mode || Window.WindowMode.Normal;
     this.childSmallWindow = [];
     this.childWindow = [];
+    this.autoresize = options.autoresize || false;
     this.innerName = options.innerName || "";
     this.window = this.main.window.document.createElement("div");
     this.window.style.resize = "none";
     this.window.style.cursor = "auto";
+    this.window.style.boxSizing = "border-box";
     let prealObj = this.parentObj;
     if (prealObj instanceof Window) {
       prealObj = prealObj.window;
     }
-    this.resizer = new ObjectResizer(this.main,this.window,prealObj);
+    this.resizer = new ObjectResizer(this.main,this,prealObj);
     this.resizerW = 5;
     this.resizerH = 5;
     if (options.fixsize) {
@@ -80,8 +82,8 @@ const Window = self.Window = class Window {
       if (current.mode === Window.WindowMode.FullScreen) {
         current.resizer.current.style.width = "100%";
         current.resizer.current.style.height = "100%";
-        current.resizer.target.style.width = "100%";
-        current.resizer.target.style.height = "100%";
+        current.window.style.width = "100%";
+        current.window.style.height = "100%";
         current.resizer.resizeMax();
         current.resizer.current.dispatchEvent(new Event("resize"));
         current.window.dispatchEvent(new Event("resize"));
@@ -133,8 +135,8 @@ const Window = self.Window = class Window {
             current.titlebarObj.showTitle = true;
             current.resizer.current.style.width = "100%";
             current.resizer.current.style.height = "100%";
-            current.resizer.target.style.width = "100%";
-            current.resizer.target.style.height = "100%";
+            current.window.style.width = "100%";
+            current.window.style.height = "100%";
             current.resizer.move(0,0);
             current.resizer.setDiff(0,0);
             current.resizer.resizeMax();
@@ -171,8 +173,8 @@ const Window = self.Window = class Window {
           current.original.left = current.resizer.getPos().left;
           current.resizer.current.style.width = "100%";
           current.resizer.current.style.height = "100%";
-          current.resizer.target.style.width = "100%";
-          current.resizer.target.style.height = "100%";
+          current.window.style.width = "100%";
+          current.window.style.height = "100%";
           current.resizer.move(0,0);
           current.resizer.setDiff(0,0);
           current.resizer.resizeMax();

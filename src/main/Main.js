@@ -55,6 +55,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: null,
       enableHScrollbar: null,
       fixsize: false,
+      autoresize: true,
       title:"Test Window3",
       width: 640 + "px",
       height: 480 + "px",
