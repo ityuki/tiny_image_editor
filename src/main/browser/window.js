@@ -167,8 +167,8 @@ const Window = self.Window = class Window {
           break;
         case Window.WindowMode.FullScreen:
           current.original.lastMode = Window.WindowMode.FullScreen,
-          current.original.width = current.resizer.getPos().width;
-          current.original.height = current.resizer.getPos().height;
+          current.original.width = current.window.getBoundingClientRect().width;
+          current.original.height = current.window.getBoundingClientRect().height;
           current.original.top = current.resizer.getPos().top;
           current.original.left = current.resizer.getPos().left;
           current.resizer.current.style.width = "100%";

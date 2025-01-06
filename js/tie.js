@@ -2708,8 +2708,8 @@ const Window = self.Window = class Window {
           break;
         case Window.WindowMode.FullScreen:
           current.original.lastMode = Window.WindowMode.FullScreen,
-          current.original.width = current.resizer.getPos().width;
-          current.original.height = current.resizer.getPos().height;
+          current.original.width = current.window.getBoundingClientRect().width;
+          current.original.height = current.window.getBoundingClientRect().height;
           current.original.top = current.resizer.getPos().top;
           current.original.left = current.resizer.getPos().left;
           current.resizer.current.style.width = "100%";
@@ -3849,7 +3849,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.20250106-1340",
+      title:"Test Window - v0.0.1.20250106-1350",
       width: 800 + "px",
       height: 600 + "px",
     });
