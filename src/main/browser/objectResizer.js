@@ -20,7 +20,8 @@ const ObjectResizer = self.ObjectResizer = class ObjectResizer {
       current.resizeMax();
     });
     this.parent.addEventListener("resize",(e)=>{
-      if (current.targetWnd.autoresize == true){
+      if (current.targetWnd.autoresize == true ||
+          current.targetWnd.mode == Window.WindowMode.FullScreen){
         current.resizeMax();
       }
     });

@@ -20,6 +20,55 @@ fi
 mkdir -p "$TMP"
 mkdir -p "$OUT"
 
+BUILD_UTIME=`date "+%s"`
+BUILD_YEAR=`date "+%Y"`
+BUILD_MONTH=`date "+%m"`
+BUILD_DAY=`date "+%d"`
+BUILD_YMD=`date "+%Y%m%d"`
+BUILD_HOUR=`date "+%H"`
+BUILD_MINUTE=`date "+%M"`
+BUILD_HM=`date "+%H%M"`
+BUILD_SECOND=`date "+%S"`
+BUILD_HMS=`date "+%H%M%S"`
+BUILD_MSEC=`date "+%3N"`
+BUILD_NSEC=`date "+%N"`
+BUILD_TZ=`date "+%z"`
+BUILD_ISO8601=`date '+%FT%T%Z'`
+BUILD_ISO8601_UTC=`date --utc '+%FT%TZ'`
+BUILD_ISO8601_UTC_MSEC=`date --utc '+%FT%T.%3NZ'`
+BUILD_COMMIT=`git rev-parse HEAD`
+
+declare -A BUILD_INFO=(
+  ["DATE"]="${BUILD_DATE}"
+  ["UTIME"]="${BUILD_UTIME}"
+  ["YEAR"]="${BUILD_YEAR}"
+  ["MONTH"]="${BUILD_MONTH}"
+  ["DAY"]="${BUILD_DAY}"
+  ["YMD"]="${BUILD_YMD}"
+  ["HOUR"]="${BUILD_HOUR}"
+  ["MINUTE"]="${BUILD_MINUTE}"
+  ["HM"]="${BUILD_HM}"
+  ["SECOND"]="${BUILD_SECOND}"
+  ["HMS"]="${BUILD_HMS}"
+  ["MSEC"]="${BUILD_MSEC}"
+  ["NSEC"]="${BUILD_NSEC}"
+  ["TZ"]="${BUILD_TZ}"
+  ["ISO8601"]="${BUILD_ISO8601}"
+  ["ISO8601_UTC"]="${BUILD_ISO8601_UTC}"
+  ["ISO8601_UTC_MSEC"]="${BUILD_ISO8601_UTC_MSEC}"
+  ["COMMIT"]="${BUILD_COMMIT}"
+)
+
+function set_build_info() {
+  local fname=$1
+  local key=""
+  local val=""
+  for key in "${!BUILD_INFO[@]}"; do
+    val=${BUILD_INFO[$key]}
+    sed -i -e "s/@__REPLACE__BUILD_INFO_${key}__@/${val}/g" "${fname}"
+  done
+}
+
 FIRSTLOAD_FILES=("functions.js")
 SECONDLOAD_DIRS=("utils")
 LASTLOAD_DIRS=("vendor")
@@ -156,4 +205,5 @@ for file in `find "${SRC}/${MAIN}/" -maxdepth 1 -type f -regex '.+\.js' -printf 
 done
 
 cat "${SRC}/${TEMPLATE}/${JSTOP}" "${TMP}/center.tjs" "${SRC}/${TEMPLATE}/${JSBOTTOM}" > "${OUT}/${OUTFILE}"
+set_build_info "${OUT}/${OUTFILE}"
 cp -f "${OUT}/${OUTFILE}" "js/${OUTFILE}"

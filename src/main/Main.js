@@ -3,8 +3,10 @@ const Main = self.Main = class Main {
   constructor(targetObj, tieName, bodyObj,opt) {
     this.$tie = Main.$tie;
     this.window = app.g_window;
+    this.version = "0.0.1";
     this.targetObj = targetObj;
     this.targetObj.style.overflow = "hidden";
+    this.targetObj.style.position = "relative";
     if (tieName === undefined || tieName === null) {
       tieName = 'default';
     }
@@ -36,7 +38,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v0.0.1.20250106-1350",
+      title:"Test Window - v"+this.version+".@__REPLACE__BUILD_INFO_YMD__@-@__REPLACE__BUILD_INFO_HM__@",
       width: 800 + "px",
       height: 600 + "px",
     });
