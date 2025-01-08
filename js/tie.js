@@ -2554,6 +2554,146 @@ const Window = self.Window = class Window {
     Minimized: 2,
   };
   static currentWindowId = 0;
+  getChildWindow() {
+    return this.childWindow;
+  }
+  parentResize() {
+    if (this.mode === Window.WindowMode.FullScreen) {
+      this.resizer.current.style.width = "100%";
+      this.resizer.current.style.height = "100%";
+      this.window.style.width = "100%";
+      this.window.style.height = "100%";
+      this.resizer.resizeMax();
+      this.resizer.current.dispatchEvent(new Event("resize"));
+      this.window.dispatchEvent(new Event("resize"));
+    }
+    for(let child of this.getChildWindow()) {
+      child.parentResize();
+    }
+  }
+  changeMode(mode) {
+    if (this.original.lastMode === Window.WindowMode.Minimized) {
+      if (this.parentObj instanceof Window) {
+        this.parentObj.childSmallWindow = this.parentObj.childSmallWindow.map((e,i) => {
+          if (e === current) {
+            return null;
+          }
+          return e;
+        });
+        while(this.parentObj.childSmallWindow[this.parentObj.childSmallWindow.length - 1] === null){
+          this.parentObj.childSmallWindow.pop();
+        }
+      }
+      switch (mode) {
+        case Window.WindowMode.Normal:
+          this.titlebarObj.showMinIcon = true;
+          this.titlebarObj.showFullscrIcon = true;
+          this.titlebarObj.showTitle = true;
+          this.resizer.resizeInner(this.original.width,this.original.height);
+          this.resizer.move(this.original.left,this.original.top);
+          //this.window.style.width = this.original.width;
+          //this.window.style.height = this.original.height;
+          this.resizer.unsetMin();
+          this.resizer.resizeMax();
+          this.resizer.setDiff(this.resizerW,this.resizerH);
+          this.resizer.this.dispatchEvent(new Event("resize"));
+          this.window.dispatchEvent(new Event("resize"));
+          this.original.lastMode = Window.WindowMode.Normal;
+          this.setTop();
+          break;
+        case Window.WindowMode.FullScreen:
+          this.titlebarObj.showMinIcon = true;
+          this.titlebarObj.showFullscrIcon = false;
+          this.titlebarObj.showTitle = true;
+          this.resizer.this.style.width = "100%";
+          this.resizer.this.style.height = "100%";
+          this.window.style.width = "100%";
+          this.window.style.height = "100%";
+          this.resizer.move(0,0);
+          this.resizer.setDiff(0,0);
+          this.resizer.unsetMin();
+          this.resizer.resizeMax();
+          //this.resizer.fit();
+          this.resizer.this.dispatchEvent(new Event("resize"));
+          this.window.dispatchEvent(new Event("resize"));
+          this.original.lastMode = Window.WindowMode.FullScreen;
+          this.setTop();
+          break;
+      }
+      this.mode = mode;
+      this.titlebarObj.update();
+      return;
+    }
+    switch (mode) {
+      case Window.WindowMode.Normal:
+        this.titlebarObj.showMinIcon = true;
+        this.titlebarObj.showFullscrIcon = true;
+        this.titlebarObj.showTitle = true;
+        this.resizer.setDiff(this.resizerW,this.resizerH);
+        this.resizer.resizeInner(this.original.width,this.original.height);
+        this.resizer.move(this.original.left,this.original.top);
+        this.resizer.this.dispatchEvent(new Event("resize"));
+        this.window.dispatchEvent(new Event("resize"));
+        this.original.lastMode = Window.WindowMode.Normal;
+        this.setTop();
+        break;
+      case Window.WindowMode.FullScreen:
+        this.original.lastMode = Window.WindowMode.FullScreen,
+        this.original.width = this.window.getBoundingClientRect().width;
+        this.original.height = this.window.getBoundingClientRect().height;
+        this.original.top = this.resizer.getPos().top;
+        this.original.left = this.resizer.getPos().left;
+        this.resizer.this.style.width = "100%";
+        this.resizer.this.style.height = "100%";
+        this.window.style.width = "100%";
+        this.window.style.height = "100%";
+        this.resizer.move(0,0);
+        this.resizer.setDiff(0,0);
+        this.resizer.resizeMax();
+        this.resizer.this.dispatchEvent(new Event("resize"));
+        //this.resizer.fit();
+        this.window.dispatchEvent(new Event("resize"));
+        this.titlebarObj.showMinIcon = true;
+        this.titlebarObj.showFullscrIcon = false;
+        this.titlebarObj.showTitle = true;
+        this.setTop();
+        break;
+      case Window.WindowMode.Minimized:
+        if (this.original.lastMode === Window.WindowMode.Normal) {
+          this.original.width = this.window.getBoundingClientRect().width;
+          this.original.height = this.window.getBoundingClientRect().height;
+          this.original.top = this.resizer.getPos().top;
+          this.original.left = this.resizer.getPos().left;
+          this.titlebarObj.showFullscrIcon = false;
+        }else if (this.original.lastMode === Window.WindowMode.FullScreen) {
+          this.titlebarObj.showFullscrIcon = true;
+        }
+        this.original.lastMode = Window.WindowMode.Minimized;
+        this.resizer.this.style.top = "calc(100% - 20px)";
+        if (this.parentObj instanceof Window) {
+          let idx = this.parentObj.childSmallWindow.indexOf(null);
+          if (idx < 0) {
+            idx = this.parentObj.childSmallWindow.length;
+            this.parentObj.childSmallWindow.push(current);
+          }
+          this.resizer.this.style.left = (idx * 60) + "px";
+          this.parentObj.childSmallWindow[idx] = current;
+        }else{
+          this.resizer.this.style.left = "0px";
+        }
+        this.window.style.width = "60px";
+        this.window.style.height = "20px";  
+        this.resizer.setDiff(0,0);
+        this.resizer.setMin();
+        this.resizer.this.dispatchEvent(new Event("resize"));
+        this.titlebarObj.showMinIcon = false;
+        this.titlebarObj.showTitle = false;
+        break;
+    }
+    this.titlebarObj.update();
+    this.mode = mode;
+  }
+
   constructor(main,parentObj,options) {
     Window.currentWindowId++;
     this.id = Window.currentWindowId;
@@ -2627,151 +2767,19 @@ const Window = self.Window = class Window {
       left: this.resizer.getPos().x,
       lastMode: Window.WindowMode.Normal,
     };
-    this.parentResize = function(){
-      if (current.mode === Window.WindowMode.FullScreen) {
-        current.resizer.current.style.width = "100%";
-        current.resizer.current.style.height = "100%";
-        current.window.style.width = "100%";
-        current.window.style.height = "100%";
-        current.resizer.resizeMax();
-        current.resizer.current.dispatchEvent(new Event("resize"));
-        current.window.dispatchEvent(new Event("resize"));
-      }
-      for(let child of current.childWindow){
-        child.parentResize();
-      }
-    }
     if (this.parentObj !== null) {
       if (this.parentObj instanceof Window) {
-        this.parentObj.window.addEventListener("resize",this.parentResize);
+        this.parentObj.window.addEventListener("DOMContentLoaded",()=>{
+          this.parentObj.window.addEventListener("resize",this.parentResize);
+        });
       }else{
-        this.parentObj.addEventListener("resize",this.parentResize);
-        const observer = new ResizeObserver(this.parentResize);
-        observer.observe(this.parentObj);
+        this.parentObj.addEventListener("DOMContentLoaded",()=>{
+          this.parentObj.addEventListener("resize",this.parentResize);
+          const observer = new ResizeObserver(this.parentResize);
+          observer.observe(this.parentObj);
+        });
       }
     }
-    this.changeMode = function(mode) {
-      if (current.original.lastMode === Window.WindowMode.Minimized) {
-        if (current.parentObj instanceof Window) {
-          current.parentObj.childSmallWindow = current.parentObj.childSmallWindow.map((e,i) => {
-            if (e === current) {
-              return null;
-            }
-            return e;
-          });
-          while(current.parentObj.childSmallWindow[current.parentObj.childSmallWindow.length - 1] === null){
-            current.parentObj.childSmallWindow.pop();
-          }
-        }
-        switch (mode) {
-          case Window.WindowMode.Normal:
-            current.titlebarObj.showMinIcon = true;
-            current.titlebarObj.showFullscrIcon = true;
-            current.titlebarObj.showTitle = true;
-            current.resizer.resizeInner(current.original.width,current.original.height);
-            current.resizer.move(current.original.left,current.original.top);
-            //current.window.style.width = current.original.width;
-            //current.window.style.height = current.original.height;
-            current.resizer.unsetMin();
-            current.resizer.resizeMax();
-            current.resizer.setDiff(current.resizerW,current.resizerH);
-            current.resizer.current.dispatchEvent(new Event("resize"));
-            current.window.dispatchEvent(new Event("resize"));
-            current.original.lastMode = Window.WindowMode.Normal;
-            current.setTop();
-            break;
-          case Window.WindowMode.FullScreen:
-            current.titlebarObj.showMinIcon = true;
-            current.titlebarObj.showFullscrIcon = false;
-            current.titlebarObj.showTitle = true;
-            current.resizer.current.style.width = "100%";
-            current.resizer.current.style.height = "100%";
-            current.window.style.width = "100%";
-            current.window.style.height = "100%";
-            current.resizer.move(0,0);
-            current.resizer.setDiff(0,0);
-            current.resizer.unsetMin();
-            current.resizer.resizeMax();
-            //current.resizer.fit();
-            current.resizer.current.dispatchEvent(new Event("resize"));
-            current.window.dispatchEvent(new Event("resize"));
-            current.original.lastMode = Window.WindowMode.FullScreen;
-            current.setTop();
-            break;
-        }
-        current.mode = mode;
-        current.titlebarObj.update();
-        return;
-      }
-      switch (mode) {
-        case Window.WindowMode.Normal:
-          current.titlebarObj.showMinIcon = true;
-          current.titlebarObj.showFullscrIcon = true;
-          current.titlebarObj.showTitle = true;
-          current.resizer.setDiff(current.resizerW,current.resizerH);
-          current.resizer.resizeInner(current.original.width,current.original.height);
-          current.resizer.move(current.original.left,current.original.top);
-          current.resizer.current.dispatchEvent(new Event("resize"));
-          current.window.dispatchEvent(new Event("resize"));
-          current.original.lastMode = Window.WindowMode.Normal;
-          current.setTop();
-          break;
-        case Window.WindowMode.FullScreen:
-          current.original.lastMode = Window.WindowMode.FullScreen,
-          current.original.width = current.window.getBoundingClientRect().width;
-          current.original.height = current.window.getBoundingClientRect().height;
-          current.original.top = current.resizer.getPos().top;
-          current.original.left = current.resizer.getPos().left;
-          current.resizer.current.style.width = "100%";
-          current.resizer.current.style.height = "100%";
-          current.window.style.width = "100%";
-          current.window.style.height = "100%";
-          current.resizer.move(0,0);
-          current.resizer.setDiff(0,0);
-          current.resizer.resizeMax();
-          current.resizer.current.dispatchEvent(new Event("resize"));
-          //current.resizer.fit();
-          current.window.dispatchEvent(new Event("resize"));
-          current.titlebarObj.showMinIcon = true;
-          current.titlebarObj.showFullscrIcon = false;
-          current.titlebarObj.showTitle = true;
-          current.setTop();
-          break;
-        case Window.WindowMode.Minimized:
-          if (current.original.lastMode === Window.WindowMode.Normal) {
-            current.original.width = current.window.getBoundingClientRect().width;
-            current.original.height = current.window.getBoundingClientRect().height;
-            current.original.top = current.resizer.getPos().top;
-            current.original.left = current.resizer.getPos().left;
-            current.titlebarObj.showFullscrIcon = false;
-          }else if (current.original.lastMode === Window.WindowMode.FullScreen) {
-            current.titlebarObj.showFullscrIcon = true;
-          }
-          current.original.lastMode = Window.WindowMode.Minimized;
-          current.resizer.current.style.top = "calc(100% - 20px)";
-          if (current.parentObj instanceof Window) {
-            let idx = current.parentObj.childSmallWindow.indexOf(null);
-            if (idx < 0) {
-              idx = current.parentObj.childSmallWindow.length;
-              current.parentObj.childSmallWindow.push(current);
-            }
-            current.resizer.current.style.left = (idx * 60) + "px";
-            current.parentObj.childSmallWindow[idx] = current;
-          }else{
-            current.resizer.current.style.left = "0px";
-          }
-          current.window.style.width = "60px";
-          current.window.style.height = "20px";  
-          current.resizer.setDiff(0,0);
-          current.resizer.setMin();
-          current.resizer.current.dispatchEvent(new Event("resize"));
-          current.titlebarObj.showMinIcon = false;
-          current.titlebarObj.showTitle = false;
-          break;
-      }
-      current.titlebarObj.update();
-      current.mode = mode;
-    };
     this.titlebarObj = new TitleBar(this.main,this.titlebar,{
       title: options.title || "Window",
       onclick: {
@@ -3862,7 +3870,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250109-0120",
+      title:"Test Window - v"+this.version+".20250109-0134",
       width: 800 + "px",
       height: 600 + "px",
     });
