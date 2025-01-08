@@ -3,7 +3,7 @@ const Main = self.Main = class Main {
   constructor(targetObj, tieName, bodyObj,opt) {
     this.$tie = Main.$tie;
     this.window = app.g_window;
-    this.version = "0.0.1";
+    this.version = "@__REPLACE__BUILD_INFO_APP_VERSION__@";
     this.targetObj = targetObj;
     this.targetObj.style.overflow = "hidden";
     this.targetObj.style.position = "relative";
@@ -238,5 +238,5 @@ const Main = self.Main = class Main {
       ovserver.observe(this.targetObj);
     });
   }
-  static $tie = $tie;
+  static $tie = app;
 }

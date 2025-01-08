@@ -1,2 +1,2 @@
 all:
-	sh make.sh
+	bash buildsys/make.sh

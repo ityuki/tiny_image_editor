@@ -3,10 +3,11 @@ const Tie = (function(){
   const modules = app.modules = {};
   const g_window = app.g_window = window;
   const APP_ID = app.APP_ID = "tie";
+  const APP_RID = app.APP_RID = "$" + APP_ID;
   const $tie = app.$tie = app;
 
   const self = this;
-  const parent = self.parent = null;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID;
@@ -21,7 +22,7 @@ app.modules.utils = {};
 
 const module_utils = self.module_utils = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils";
@@ -179,7 +180,7 @@ app.modules.utils.vendor = {};
 
 const vendor = self.vendor = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils.vendor";
@@ -187,7 +188,7 @@ app.modules.utils.vendor.fonts = {};
 
 const fonts = self.fonts = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".utils.vendor.fonts";
@@ -454,7 +455,7 @@ app.modules.browser = {};
 
 const module_browser = self.module_browser = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser";
@@ -462,7 +463,7 @@ app.modules.browser.canvasMethod = {};
 
 const canvasMethod = self.canvasMethod = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.canvasMethod";
@@ -546,7 +547,7 @@ app.modules.browser.colorTheme = {};
 
 const colorTheme = self.colorTheme = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.colorTheme";
@@ -3091,7 +3092,7 @@ app.modules.browser.vendor = {};
 
 const vendor = self.vendor = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor";
@@ -3099,7 +3100,7 @@ app.modules.browser.vendor.blurhash = {};
 
 const blurhash = self.blurhash = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor.blurhash";
@@ -3506,7 +3507,7 @@ app.modules.browser.vendor.ThumbHash = {};
 
 const ThumbHash = self.ThumbHash = (function(){
   const self = this.self = this;
-  const parent = self.parent = arguments[0] || null;;
+  const parent = self.parent = arguments[0] || {};
   const __MODULE_THIS__ = self.__MODULE_THIS__ = self;
   const __MODULE_PARENT__ = self.__MODULE_PARENT__ = arguments[0] || null;
   const __MODULE_NAME__ = self.__MODULE_NAME__ = app.APP_ID + ".browser.vendor.ThumbHash";
@@ -3861,7 +3862,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250107-1102",
+      title:"Test Window - v"+this.version+".20250109-0120",
       width: 800 + "px",
       height: 600 + "px",
     });
@@ -4061,8 +4062,11 @@ const Main = self.Main = class Main {
       ovserver.observe(this.targetObj);
     });
   }
-  static $tie = $tie;
+  static $tie = app;
 }
 
 return Main;
-}).call({},{});
+}).call({},{
+  importlib: {
+  }
+});
