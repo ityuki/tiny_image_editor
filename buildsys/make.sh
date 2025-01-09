@@ -26,9 +26,13 @@ fi
 if [ -e "$TMP" ]; then
   rm -rf "$TMP"
 fi
+if [ -e "$OUTDIR" ]; then
+  rm -rf "$OUTDIR"
+fi
 
 mkdir -p "$TMP"
 mkdir -p "$OUT"
+mkdir -p "$OUTDIR"
 
 echo "  build start: ${OUTDIR}/${OUTFILE}" >> "${BUILD_DIR}/build.log"
 
@@ -337,7 +341,11 @@ echo -n "  build...." | tee -a "${BUILD_DIR}/build.log"
 touch "${TMP}/import.tjs"
 for key in "${!JS_IMPORT_MODULES[@]}"; do
   val=${JS_IMPORT_MODULES[$key]}
-  echo "import * as ${JS_IMPORT_MODULE_PREFIX}${key} from '${val}';" >> "${TMP}/import.tjs"
+  if [ "$JS_IMPORT_TYPE" == "import" ]; then
+  echo "import ${JS_IMPORT_MODULE_PREFIX}${key} from '${val}';" >> "${TMP}/import.tjs"
+  else
+    echo "const ${JS_IMPORT_MODULE_PREFIX}${key} = require('${val}');" >> "${TMP}/import.tjs"
+  fi
 done
 touch "${TMP}/importkeys.tjs"
 for key in "${!JS_IMPORT_MODULES[@]}"; do
@@ -348,7 +356,7 @@ done
 
 touch "${TMP}/export.tjs"
 if [ "$JS_IS_EXPORT" == true ]; then
-  echo "export default ${TOP_MODULE_NAME};" >> "${TMP}/export.tjs"
+  echo "export default ${JS_TOP_MODULE_NAME};" >> "${TMP}/export.tjs"
 fi
 
 cp -f "${TEMPLATE}/${JSTOP}" "${TMP}/top.tjs"
@@ -363,6 +371,15 @@ cat "${TMP}/import.tjs" "${TMP}/top.tjs" "${TMP}/center.tjs" "${TMP}/bottom.tjs"
 set_build_info "${TMP}/main.tjs"
 cp -f "${TMP}/main.tjs" "${OUT}/main.js"
 cp -f "${OUT}/main.js" "${OUTDIR}/${OUTFILE}"
+
+for key in "${!COPY_DIRECTORY[@]}"; do
+  val=${COPY_DIRECTORY[$key]}
+  echo "  copy: ${val} -> ${OUTDIR}/${key}" | tee -a "${BUILD_DIR}/build.log"
+  mkdir -p "${OUTDIR}/${key}"
+  cp -rfT "${val}" "${OUTDIR}/${key}"
+done
+
+
 
 echo "done: ${OUTDIR}/${OUTFILE}" | tee -a "${BUILD_DIR}/build.log"
 

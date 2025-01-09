@@ -1,5 +1,6 @@
   build start: output/sample.js
     build target: (ALL)
     merge target: (ALL)
-  build....done: output/sample.js
-  build time: 0:00:00:00.186 (0.186 sec)
+  build....  copy: import_src -> output/test
+done: output/sample.js
+  build time: 0:00:00:00.191 (0.191 sec)

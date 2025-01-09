@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <title>Buildsys Sample Page</title>
-    <script src="./output/sample.js"></script>
   </head>
   <body>
-    <script>
-      var buildsys = new Buildsys();
+    <script type="module">
+      import Sample from './output/sample.js';
+      var sample = new Sample();
+      window.sample = sample;
     </script>
   </body>
 </html>

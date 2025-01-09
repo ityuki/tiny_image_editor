@@ -3876,7 +3876,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250109-1044",
+      title:"Test Window - v"+this.version+".20250109-1158",
       width: 800 + "px",
       height: 600 + "px",
     });
@@ -4084,3 +4084,4 @@ return Main;
   importlib: {
   }
 });
+export default Tie;

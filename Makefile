@@ -5,5 +5,5 @@ sample:
 	cd buildsys/sample && bash ../make.sh
 
 sampleRun:
-	cd buildsys/sample && node run_sample.js
+	cd buildsys/sample && node --experimental-modules run_sample.mjs
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Tiny Image Editor Sample Page</title>
-    <script src="./js/tie.js"></script>
+    <!-- <script src="./js/tie.js"></script> -->
   </head>
   <style>
     html {
@@ -35,8 +35,10 @@
   <body>
     <div id="sample">
     </div>
-    <script>
-      var tie = new Tie(document.getElementById('sample'))
+    <script type="module">
+      import Tie from './js/tie.js';
+      var tie = new Tie(document.getElementById('sample'));
+      window.tie = tie;
     </script>
   </body>
 </html>
