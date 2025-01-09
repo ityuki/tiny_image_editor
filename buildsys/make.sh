@@ -108,6 +108,7 @@ declare -A BUILD_INFO=(
 )
 
 declare -A TEMPLATE_INFO=(
+  ["APP_VERSION"]="${BUILD_APP_VERSION}"
   ["APP_NAME"]="${APP_NAME}"
   ["APP_ID"]="${APP_ID}"
   ["TOP_MODULE_NAME"]="${JS_TOP_MODULE_NAME}"

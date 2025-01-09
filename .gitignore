@@ -1,1 +1,6 @@
-build/
+/build/
+/buildsys/sample/build/template/
+/buildsys/sample/build/tmp/
+/buildsys/sample/build/all.env
+/buildsys/sample/build/main.js
+/buildsys/sample/build/make_sh.orig

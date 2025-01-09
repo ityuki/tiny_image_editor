@@ -1,11 +1,16 @@
 const Tie = (function(){
   const app = this.app = this;
   const modules = app.modules = {};
-  const g_window = app.g_window = window;
+  let g_window = null;
+  if (typeof window !== 'undefined') {
+    g_window = window;
+  }
+  app.g_window = g_window;
   const APP_NAME = app.APP_NAME = "Tiny Image Editor";
   const APP_ID = app.APP_ID = "tie";
   const APP_RID = app.APP_RID = "$" + APP_ID;
   const $tie = app.$tie = app;
+  const APP_VERSION = app.APP_VERSION = "0.0.1";
 
   const self = this;
   const parent = self.parent = arguments[0] || {};
@@ -3871,7 +3876,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250109-1003",
+      title:"Test Window - v"+this.version+".20250109-1044",
       width: 800 + "px",
       height: 600 + "px",
     });
