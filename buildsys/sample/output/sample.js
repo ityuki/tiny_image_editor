@@ -1,4 +1,4 @@
-import * as Buildsys_import_test from './test/test.js';
+import Buildsys_import_test from './test/test.js';
 const Buildsys = (function(){
   const app = this.app = this;
   const modules = app.modules = {};
@@ -26,7 +26,7 @@ const Main = self.Main = class Main {
     this.$sample = Main.$sample;
     this.version = app.APP_VERSION;
 
-    console.log("This is a " + app.APP_NAME + " version " + this.version + " rev. e214ffa41bec7ec67f3571b01e53089bed16a2d8 (2025-01-09 11:41:31.743 JST)");
+    console.log("This is a " + app.APP_NAME + " version " + this.version + " rev. 0830383897eac546d98a3cfd1baabc2f53d72163 (2025-01-09 12:08:10.695 JST)");
     app.parent.importlib.test();
   }
   static $sample = app;
