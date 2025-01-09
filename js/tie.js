@@ -2,6 +2,7 @@ const Tie = (function(){
   const app = this.app = this;
   const modules = app.modules = {};
   const g_window = app.g_window = window;
+  const APP_NAME = app.APP_NAME = "Tiny Image Editor";
   const APP_ID = app.APP_ID = "tie";
   const APP_RID = app.APP_RID = "$" + APP_ID;
   const $tie = app.$tie = app;
@@ -3870,7 +3871,7 @@ const Main = self.Main = class Main {
       enableVScrollbar: false,
       enableHScrollbar: false,
       fixsize: false,
-      title:"Test Window - v"+this.version+".20250109-0914",
+      title:"Test Window - v"+this.version+".20250109-1003",
       width: 800 + "px",
       height: 600 + "px",
     });
